@@ -8,11 +8,12 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import numpy as np
 from PIL import Image
-
-from inference.data.test_datasets import LongTestDataset, DAVISTestDataset, YouTubeVOSTestDataset
+import json
+from inference.data.test_datasets import LongTestDataset, DAVISTestDataset, YouTubeVOSTestDataset, EgoExoTestDataset
 from inference.data.mask_mapper import MaskMapper
 from model.network import XMem
 from inference.inference_core import InferenceCore
+from pycocotools import mask as mask_utils
 
 from progressbar import progressbar
 
@@ -33,11 +34,12 @@ parser.add_argument('--d16_path', default='../DAVIS/2016')
 parser.add_argument('--d17_path', default='../DAVIS/2017')
 parser.add_argument('--y18_path', default='../YouTube2018')
 parser.add_argument('--y19_path', default='../YouTube')
+parser.add_argument('--e23_path', default='../data/correspondence/val')
 parser.add_argument('--lv_path', default='../long_video_set')
 # For generic (G) evaluation, point to a folder that contains "JPEGImages" and "Annotations"
 parser.add_argument('--generic_path')
 
-parser.add_argument('--dataset', help='D16/D17/Y18/Y19/LV1/LV3/G', default='D17')
+parser.add_argument('--dataset', help='D16/D17/Y18/Y19/LV1/LV3/G/E23', default='E23')
 parser.add_argument('--split', help='val/test', default='val')
 parser.add_argument('--output', default=None)
 parser.add_argument('--save_all', action='store_true', 
@@ -77,6 +79,7 @@ Data preparation
 is_youtube = args.dataset.startswith('Y')
 is_davis = args.dataset.startswith('D')
 is_lv = args.dataset.startswith('LV')
+is_egoexo = args.dataset.startswith('E')
 
 if is_youtube or args.save_scores:
     out_path = path.join(args.output, 'Annotations')
@@ -96,6 +99,17 @@ if is_youtube:
         meta_dataset = YouTubeVOSTestDataset(data_root=yv_path, split='test', size=args.size)
     else:
         raise NotImplementedError
+    
+if is_egoexo:
+    if args.dataset == 'E23':
+        egoexo_path = args.e23_path
+
+        if args.split == 'val':
+            meta_dataset = EgoExoTestDataset(data_root=egoexo_path, split='val', size=args.size, num_frames=5)
+        elif args.split == 'test':
+            meta_dataset = EgoExoTestDataset(data_root=egoexo_path, split='test', size=args.size, num_frames=5)
+        else:
+            raise NotImplementedError
 
 elif is_davis:
     if args.dataset == 'D16':
@@ -145,9 +159,9 @@ total_process_time = 0
 total_frames = 0
 
 # Start eval
-for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect_stdout=True):
+for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect_stdout=False):
 
-    loader = DataLoader(vid_reader, batch_size=1, shuffle=False, num_workers=2)
+    loader = DataLoader(vid_reader, batch_size=1, shuffle=False, num_workers=0)
     vid_name = vid_reader.vid_name
     vid_length = len(loader)
     # no need to count usage for LT if the video is not that long anyway
@@ -170,6 +184,7 @@ for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect
             info = data['info']
             frame = info['frame'][0]
             shape = info['shape']
+            is_exo = info['is_exo'][0]
             need_resize = info['need_resize'][0]
 
             """
@@ -194,7 +209,7 @@ for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect
 
             # Map possibly non-continuous labels to continuous ones
             if msk is not None:
-                msk, labels = mapper.convert_mask(msk[0].numpy())
+                msk, labels = mapper.convert_mask(msk[0].numpy(), True)
                 msk = torch.Tensor(msk).cuda()
                 if need_resize:
                     msk = vid_reader.resize_mask(msk.unsqueeze(0))[0]
@@ -225,22 +240,29 @@ for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect
                 prob = (prob.detach().cpu().numpy()*255).astype(np.uint8)
 
             # Save the mask
-            if args.save_all or info['save'][0]:
+            if (args.save_all or info['save'][0]) and is_exo:
                 this_out_path = path.join(out_path, vid_name)
                 os.makedirs(this_out_path, exist_ok=True)
                 out_mask = mapper.remap_index_mask(out_mask)
                 out_img = Image.fromarray(out_mask)
                 if vid_reader.get_palette() is not None:
                     out_img.putpalette(vid_reader.get_palette())
-                out_img.save(os.path.join(this_out_path, frame[:-4]+'.png'))
+                frame_name = os.path.basename(frame)[:-4]
+                out_img.save(os.path.join(this_out_path, frame_name+'.png'))
+                out_img_coco = mask_utils.encode(np.asfortranarray((out_mask//255).astype(np.uint8)))
+                out_img_coco['counts'] = out_img_coco['counts'].decode("utf-8")
+                coco_out_path = path.join(out_path, 'coco', vid_name)
+                os.makedirs(coco_out_path, exist_ok=True)
+                with open(path.join(coco_out_path, frame_name+'.json'), 'w+') as fp:
+                    json.dump(out_img_coco, fp)
 
-            if args.save_scores:
-                np_path = path.join(args.output, 'Scores', vid_name)
-                os.makedirs(np_path, exist_ok=True)
-                if ti==len(loader)-1:
-                    hkl.dump(mapper.remappings, path.join(np_path, f'backward.hkl'), mode='w')
-                if args.save_all or info['save'][0]:
-                    hkl.dump(prob, path.join(np_path, f'{frame[:-4]}.hkl'), mode='w', compression='lzf')
+            # if args.save_scores:
+            #     np_path = path.join(args.output, 'Scores', vid_name)
+            #     os.makedirs(np_path, exist_ok=True)
+            #     if ti==len(loader)-1:
+            #         hkl.dump(mapper.remappings, path.join(np_path, f'backward.hkl'), mode='w')
+            #     if args.save_all or info['save'][0]:
+            #         hkl.dump(prob, path.join(np_path, f'{frame[:-4]}.hkl'), mode='w', compression='lzf')
 
 
 print(f'Total processing time: {total_process_time}')

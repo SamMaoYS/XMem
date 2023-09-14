@@ -137,6 +137,14 @@ for si, stage in enumerate(stages_to_perform):
 
         return construct_loader(train_dataset)
 
+    def renew_egoexo_loader(max_skip, ego_cam_name='aria01_214-1', finetune=False):
+        train_dataset = VOSDataset(egoexo_root, ego_cam_name, max_skip//5, is_bl=False, subset=None, num_frames=config['num_frames'], finetune=finetune)
+
+        print(f'EgoExo dataset size: {len(train_dataset)}')
+        print(f'Renewed with {max_skip=}')
+
+        return construct_loader(train_dataset)
+
     def renew_bl_loader(max_skip, finetune=False):
         train_dataset = VOSDataset(path.join(bl_root, 'JPEGImages'), 
                             path.join(bl_root, 'Annotations'), max_skip, is_bl=True, num_frames=config['num_frames'], finetune=finetune)
@@ -179,6 +187,12 @@ for si, stage in enumerate(stages_to_perform):
 
         train_sampler, train_loader = renew_bl_loader(5)
         renew_loader = renew_bl_loader
+    elif stage == '3':
+        increase_skip_fraction = [0.1, 0.3, 0.9, 100]
+        # VOS dataset, 480p is used for both datasets
+        egoexo_root = path.join(path.expanduser(config['egoexo_root']), 'train')
+        train_sampler, train_loader = renew_egoexo_loader(5)
+        renew_loader = renew_egoexo_loader
     else:
         # stage 2 or 3
         increase_skip_fraction = [0.1, 0.3, 0.9, 100]

@@ -98,3 +98,107 @@ class VideoReader(Dataset):
 
     def __len__(self):
         return len(self.frames)
+    
+class EgoExoVideoReader(Dataset):
+    """
+    This class is used to read a video, one frame at a time
+    """
+    def __init__(self, vid_name, ego_image_dir, exo_image_dir, size=-1, to_save=None, use_all_mask=False, size_dir=None):
+        """
+        image_dir - points to a directory of jpg images
+        mask_dir - points to a directory of png masks
+        size - resize min. side to size. Does nothing if <0.
+        to_save - optionally contains a list of file names without extensions 
+            where the segmentation mask is required
+        use_all_mask - when true, read all available mask in mask_dir.
+            Default false. Set to true for YouTubeVOS validation.
+        """
+        self.vid_name = vid_name
+        self.ego_image_dir = ego_image_dir
+        self.exo_image_dir = exo_image_dir
+        ego_mask_dir = ego_image_dir.replace('rgb', 'mask')
+        exo_mask_dir = exo_image_dir.replace('rgb', 'mask')
+        self.to_save = to_save
+        self.use_all_mask = use_all_mask
+        if size_dir is None:
+            self.size_dir = self.exo_image_dir
+        else:
+            self.size_dir = size_dir
+
+        frames_ids = np.intersect1d(sorted(os.listdir(ego_mask_dir)), sorted(os.listdir(exo_mask_dir)))
+        # self.frames = [None] * (len(frames_ids) * 2)
+        self.frames = [None] * len(frames_ids)
+        for i, f in enumerate(frames_ids):
+            # self.frames[2*i] = path.join(self.ego_image_dir, f)
+            # self.frames[2*i+1] = path.join(self.exo_image_dir, f)
+            self.frames[i] = path.join(self.exo_image_dir, f)
+
+        # self.palette = Image.open(path.join(ego_mask_dir, sorted(os.listdir(ego_mask_dir))[0])).getpalette()
+        # self.first_gt_path = path.join(ego_mask_dir, sorted(os.listdir(ego_mask_dir))[0])
+        self.palette = Image.open(path.join(exo_mask_dir, sorted(os.listdir(exo_mask_dir))[0])).getpalette()
+        self.first_gt_path = path.join(exo_mask_dir, sorted(os.listdir(exo_mask_dir))[0])
+
+        if size < 0:
+            self.im_transform = transforms.Compose([
+                transforms.ToTensor(),
+                im_normalization,
+            ])
+        else:
+            self.im_transform = transforms.Compose([
+                transforms.ToTensor(),
+                im_normalization,
+                transforms.Resize(size, interpolation=InterpolationMode.BILINEAR),
+            ])
+        self.size = size
+
+
+    def __getitem__(self, idx):
+        frame = self.frames[idx]
+        info = {}
+        data = {}
+        info['frame'] = frame
+        info['save'] = (self.to_save is None) or (frame in self.to_save)
+
+        im_path = path.join(frame)
+        img = Image.open(im_path).convert('RGB')
+        image_dir = os.path.dirname(frame)
+        is_exo = image_dir == self.size_dir
+        if is_exo:
+            shape = np.array(img).shape[:2]
+        else:
+            size_path = path.join(self.size_dir, os.path.basename(frame))
+            size_im = Image.open(size_path).convert('RGB')
+            shape = np.array(size_im).shape[:2]
+
+        gt_path = path.join(frame.replace('rgb/', 'mask/'))
+        if not is_exo:
+            img = img.resize(shape[::-1])
+        img = self.im_transform(img)
+
+        load_mask = self.use_all_mask or (gt_path == self.first_gt_path)
+        if load_mask and path.exists(gt_path):
+            mask = Image.open(gt_path).convert('P')
+            mask = mask.resize(shape[::-1])
+            mask = np.array(mask, dtype=np.uint8)
+            data['mask'] = mask
+
+        info['shape'] = shape
+        info['is_exo'] = is_exo
+        info['need_resize'] = not (self.size < 0)
+        data['rgb'] = img
+        data['info'] = info
+
+        return data
+
+    def resize_mask(self, mask):
+        # mask transform is applied AFTER mapper, so we need to post-process it in eval.py
+        h, w = mask.shape[-2:]
+        min_hw = min(h, w)
+        return F.interpolate(mask, (int(h/min_hw*self.size), int(w/min_hw*self.size)), 
+                    mode='nearest')
+
+    def get_palette(self):
+        return self.palette
+
+    def __len__(self):
+        return len(self.frames)

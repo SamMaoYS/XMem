@@ -6,6 +6,7 @@ from torch.utils.data.dataset import Dataset
 from torchvision import transforms
 from torchvision.transforms import InterpolationMode
 from PIL import Image
+from natsort import natsorted
 import numpy as np
 
 from dataset.range_transform import im_normalization, im_mean
@@ -22,30 +23,53 @@ class VOSDataset(Dataset):
     - Apply random transform to each of the frame
     - The distance between frames is controlled
     """
-    def __init__(self, im_root, gt_root, max_jump, is_bl, subset=None, num_frames=3, max_num_obj=3, finetune=False):
-        self.im_root = im_root
-        self.gt_root = gt_root
+    def __init__(self, egoexo_root, ego_cam_name, max_jump, is_bl, subset=None, num_frames=3, max_num_obj=1, finetune=False, augmentation=False):
+        self.takes = sorted(os.listdir(egoexo_root))
+        self.egoexo_root = egoexo_root
+        self.ego_cam_name = ego_cam_name
+        self.frame_folder = 'rgb'
+        self.mask_folder = 'mask'
         self.max_jump = max_jump
         self.is_bl = is_bl
         self.num_frames = num_frames
         self.max_num_obj = max_num_obj
+        self.augmentation = augmentation
 
         self.videos = []
         self.frames = {}
 
-        vid_list = sorted(os.listdir(self.im_root))
-        # Pre-filtering
-        for vid in vid_list:
-            if subset is not None:
-                if vid not in subset:
-                    continue
-            frames = sorted(os.listdir(os.path.join(self.im_root, vid)))
-            if len(frames) < num_frames:
-                continue
-            self.frames[vid] = frames
-            self.videos.append(vid)
+        exo_cam_names = ['cam01', 'cam02', 'cam03', 'cam04']
 
-        print('%d out of %d videos accepted in %s.' % (len(self.videos), len(vid_list), im_root))
+        for exo_cam_name in exo_cam_names:
+            # Pre-filtering
+            for take in self.takes:
+                take_dir = path.join(egoexo_root, take)
+                ego_dir = path.join(take_dir, ego_cam_name)
+                exo_dir = path.join(take_dir, exo_cam_name)
+                if not os.path.isdir(exo_dir) or not os.path.isdir(ego_dir):
+                    continue
+                ego_objects = natsorted(os.listdir(ego_dir))
+                exo_objects = natsorted(os.listdir(exo_dir))
+                objects = np.intersect1d(ego_objects, exo_objects)
+                for obj in objects:
+                    if subset is not None:
+                        if obj not in subset:
+                            continue
+                    ego_frames = natsorted(os.listdir(path.join(ego_dir, obj, self.mask_folder)))
+                    exo_frames = natsorted(os.listdir(path.join(exo_dir, obj, self.mask_folder)))
+                    frames = np.intersect1d(ego_frames, exo_frames)
+                    if len(frames) < num_frames:
+                        continue
+                    vid = path.join(take, exo_cam_name, obj)
+                    # self.frames[vid] = [None] * (len(frames) * 2)
+                    self.frames[vid] = [None] * (len(frames))
+                    # self.frames[vid][0] = path.join(ego_dir, obj, self.frame_folder, frames[0])
+                    for i, f in enumerate(frames):
+                        self.frames[vid][i] = path.join(exo_dir, obj, self.frame_folder, f)
+
+                    self.videos.append(vid)
+
+        print('%d out of %d videos accepted in %s.' % (len(self.videos), len(self.takes), path.join(egoexo_root, take, exo_cam_name)))
 
         # These set of transform is the same for im/gt pairs, but different among the 3 sampled frames
         self.pair_im_lone_transform = transforms.Compose([
@@ -89,8 +113,13 @@ class VOSDataset(Dataset):
             ])
 
         # Final transform without randomness
+        self.final_gt_transform = transforms.Compose([
+            transforms.Resize((384, 384)),
+        ])
+
         self.final_im_transform = transforms.Compose([
             transforms.ToTensor(),
+            transforms.Resize((384, 384)),
             im_normalization,
         ])
 
@@ -99,8 +128,6 @@ class VOSDataset(Dataset):
         info = {}
         info['name'] = video
 
-        vid_im_path = path.join(self.im_root, video)
-        vid_gt_path = path.join(self.gt_root, video)
         frames = self.frames[video]
 
         trials = 0
@@ -120,7 +147,7 @@ class VOSDataset(Dataset):
                 new_set = set(range(max(0, frames_idx[-1]-this_max_jump), min(length, frames_idx[-1]+this_max_jump+1)))
                 acceptable_set = acceptable_set.union(new_set).difference(set(frames_idx))
 
-            frames_idx = sorted(frames_idx)
+            frames_idx = natsorted(frames_idx)
             if np.random.rand() < 0.5:
                 # Reverse time
                 frames_idx = frames_idx[::-1]
@@ -130,25 +157,28 @@ class VOSDataset(Dataset):
             masks = []
             target_objects = []
             for f_idx in frames_idx:
-                jpg_name = frames[f_idx][:-4] + '.jpg'
-                png_name = frames[f_idx][:-4] + '.png'
-                info['frames'].append(jpg_name)
+                rgb_name = frames[f_idx]
+                gt_name = frames[f_idx].replace(self.frame_folder, self.mask_folder)
+                info['frames'].append(rgb_name)
 
-                reseed(sequence_seed)
-                this_im = Image.open(path.join(vid_im_path, jpg_name)).convert('RGB')
-                this_im = self.all_im_dual_transform(this_im)
-                this_im = self.all_im_lone_transform(this_im)
-                reseed(sequence_seed)
-                this_gt = Image.open(path.join(vid_gt_path, png_name)).convert('P')
-                this_gt = self.all_gt_dual_transform(this_gt)
+                this_im = Image.open(rgb_name).convert('RGB')
+                if self.augmentation:
+                    reseed(sequence_seed)
+                    this_im = self.all_im_dual_transform(this_im)
+                    this_im = self.all_im_lone_transform(this_im)
+                    reseed(sequence_seed)
+                this_gt = Image.open(gt_name).convert('P')
+                if self.augmentation:
+                    this_gt = self.all_gt_dual_transform(this_gt)
 
-                pairwise_seed = np.random.randint(2147483647)
-                reseed(pairwise_seed)
-                this_im = self.pair_im_dual_transform(this_im)
-                this_im = self.pair_im_lone_transform(this_im)
-                reseed(pairwise_seed)
-                this_gt = self.pair_gt_dual_transform(this_gt)
-
+                    pairwise_seed = np.random.randint(2147483647)
+                    reseed(pairwise_seed)
+                    this_im = self.pair_im_dual_transform(this_im)
+                    this_im = self.pair_im_lone_transform(this_im)
+                    reseed(pairwise_seed)
+                    this_gt = self.pair_gt_dual_transform(this_gt)
+                else:
+                    this_gt = self.final_gt_transform(this_gt)
                 this_im = self.final_im_transform(this_im)
                 this_gt = np.array(this_gt)
 

@@ -60,6 +60,13 @@ class LossComputer:
                 loss, p = self.bce(data[f'logits_{ti}'][bi:bi+1, :num_objects[bi]+1], data['cls_gt'][bi:bi+1,ti,0], it)
                 losses['p'] += p / b / (t-1)
                 losses[f'ce_loss_{ti}'] += loss / b
+                pred_mask = torch.argmax(data[f'logits_{ti}'][bi:bi+1, :num_objects[bi]+1], dim=1)
+                inner = torch.sum(torch.logical_and(pred_mask, data['cls_gt'][bi:bi+1,ti,0]))
+                outer = torch.sum(torch.logical_or(pred_mask, data['cls_gt'][bi:bi+1,ti,0]))
+                iou = inner / outer if outer > 1e-5 else 0.0
+                if outer <= 1e-5:
+                    continue
+                losses[f'iou_{ti}'] += iou / b
 
             losses['total_loss'] += losses['ce_loss_%d'%ti]
             losses[f'dice_loss_{ti}'] = dice_loss(data[f'masks_{ti}'], data['cls_gt'][:,ti,0])

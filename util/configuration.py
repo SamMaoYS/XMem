@@ -16,6 +16,7 @@ class Configuration():
         parser.add_argument('--static_root', help='Static training data root', default='../static')
         parser.add_argument('--bl_root', help='Blender training data root', default='../BL30K')
         parser.add_argument('--yv_root', help='YouTubeVOS data root', default='../YouTube')
+        parser.add_argument('--egoexo_root', help='EgoExo data root', default='../data/egoexo')
         parser.add_argument('--davis_root', help='DAVIS data root', default='../DAVIS')
         parser.add_argument('--num_workers', help='Total number of dataloader workers across all GPUs processes', type=int, default=16)
 
