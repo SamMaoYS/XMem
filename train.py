@@ -190,7 +190,7 @@ for si, stage in enumerate(stages_to_perform):
     elif stage == '3':
         increase_skip_fraction = [0.1, 0.3, 0.9, 100]
         # VOS dataset, 480p is used for both datasets
-        egoexo_root = path.join(path.expanduser(config['egoexo_root']), 'train')
+        egoexo_root = path.join(path.expanduser(config['egoexo_root']), 'val')
         train_sampler, train_loader = renew_egoexo_loader(5)
         renew_loader = renew_egoexo_loader
     else:

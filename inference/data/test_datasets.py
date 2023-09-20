@@ -125,13 +125,13 @@ class EgoExoTestDataset:
                     if len(frames) < num_frames:
                         continue
                     vid = path.join(take, exo_cam_name, obj)
-                    # self.req_frame_list[vid] = [None] * (len(frames) * 2)
-                    self.req_frame_list[vid] = [None] * len(frames)
+                    self.req_frame_list[vid] = [None] * (len(frames) * 2)
+                    # self.req_frame_list[vid] = [None] * len(frames)
                     # self.frames[vid][0] = path.join(ego_dir, obj, self.frame_folder, frames[0])
                     for i, f in enumerate(frames):
-                        # self.req_frame_list[vid][2*i] = path.join(ego_dir, obj, self.frame_folder, f)
-                        # self.req_frame_list[vid][2*i+1] = path.join(exo_dir, obj, self.frame_folder, f)
-                        self.req_frame_list[vid][i] = path.join(exo_dir, obj, self.frame_folder, f)
+                        self.req_frame_list[vid][2*i] = path.join(ego_dir, obj, self.frame_folder, f)
+                        self.req_frame_list[vid][2*i+1] = path.join(exo_dir, obj, self.frame_folder, f)
+                        # self.req_frame_list[vid][i] = path.join(exo_dir, obj, self.frame_folder, f)
 
                     self.vid_list.append(vid)
         self.size = size

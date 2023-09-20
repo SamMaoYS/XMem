@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from collections import defaultdict
-
+import numpy as np
 
 def dice_loss(input_mask, cls_gt):
     num_objects = input_mask.shape[1]
@@ -53,6 +53,7 @@ class LossComputer:
         losses = defaultdict(int)
 
         b, t = data['rgb'].shape[:2]
+        ious = []
 
         losses['total_loss'] = 0
         for ti in range(1, t):
@@ -66,10 +67,10 @@ class LossComputer:
                 iou = inner / outer if outer > 1e-5 else 0.0
                 if outer <= 1e-5:
                     continue
-                losses[f'iou_{ti}'] += iou / b
+                ious.append(iou.cpu())
 
             losses['total_loss'] += losses['ce_loss_%d'%ti]
             losses[f'dice_loss_{ti}'] = dice_loss(data[f'masks_{ti}'], data['cls_gt'][:,ti,0])
             losses['total_loss'] += losses[f'dice_loss_{ti}']
 
-        return losses
+        return losses, np.sum(ious) / len(ious) if len(ious) > 0 else None

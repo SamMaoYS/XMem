@@ -68,6 +68,8 @@ class XMemTrainer:
         num_filled_objects = [o.item() for o in data['info']['num_objects']]
         num_objects = first_frame_gt.shape[2]
         selector = data['selector'].unsqueeze(2).unsqueeze(2)
+        iou_mean = 0
+        iou_count = 0
 
         with torch.cuda.amp.autocast(enabled=self.config['amp']):
             # image features never change, compute once
@@ -116,7 +118,10 @@ class XMemTrainer:
                 out[f'logits_{ti}'] = logits
 
             if self._do_log or self._is_train:
-                losses = self.loss_computer.compute({**data, **out}, num_filled_objects, it)
+                losses, iou = self.loss_computer.compute({**data, **out}, num_filled_objects, it)
+                if iou is not None:
+                    iou_mean = (iou_mean * iou_count + iou) / (iou_count + 1)
+                    iou_count += 1
 
                 # Logging
                 if self._do_log:
@@ -128,10 +133,12 @@ class XMemTrainer:
                                 size = (384, 384)
                                 self.logger.log_cv2('train/pairs', pool_pairs(images, size, num_filled_objects), it)
 
+            print(iou_mean)
             if self._is_train:
                 if (it) % self.log_text_interval == 0 and it != 0:
                     if self.logger is not None:
                         self.logger.log_scalar('train/lr', self.scheduler.get_last_lr()[0], it)
+                        self.logger.log_scalar('train/iou', iou_mean, it)
                         self.logger.log_metrics('train', 'time', (time.time()-self.last_time)/self.log_text_interval, it)
                     self.last_time = time.time()
                     self.train_integrator.finalize('train', it)

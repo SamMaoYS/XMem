@@ -126,17 +126,17 @@ class EgoExoVideoReader(Dataset):
             self.size_dir = size_dir
 
         frames_ids = np.intersect1d(sorted(os.listdir(ego_mask_dir)), sorted(os.listdir(exo_mask_dir)))
-        # self.frames = [None] * (len(frames_ids) * 2)
-        self.frames = [None] * len(frames_ids)
+        self.frames = [None] * (len(frames_ids) * 2)
+        # self.frames = [None] * len(frames_ids)
         for i, f in enumerate(frames_ids):
-            # self.frames[2*i] = path.join(self.ego_image_dir, f)
-            # self.frames[2*i+1] = path.join(self.exo_image_dir, f)
-            self.frames[i] = path.join(self.exo_image_dir, f)
+            self.frames[2*i] = path.join(self.ego_image_dir, f)
+            self.frames[2*i+1] = path.join(self.exo_image_dir, f)
+            # self.frames[i] = path.join(self.exo_image_dir, f)
 
-        # self.palette = Image.open(path.join(ego_mask_dir, sorted(os.listdir(ego_mask_dir))[0])).getpalette()
-        # self.first_gt_path = path.join(ego_mask_dir, sorted(os.listdir(ego_mask_dir))[0])
-        self.palette = Image.open(path.join(exo_mask_dir, sorted(os.listdir(exo_mask_dir))[0])).getpalette()
-        self.first_gt_path = path.join(exo_mask_dir, sorted(os.listdir(exo_mask_dir))[0])
+        self.palette = Image.open(path.join(ego_mask_dir, sorted(os.listdir(ego_mask_dir))[0])).getpalette()
+        self.first_gt_path = path.join(ego_mask_dir, sorted(os.listdir(ego_mask_dir))[0])
+        # self.palette = Image.open(path.join(exo_mask_dir, sorted(os.listdir(exo_mask_dir))[0])).getpalette()
+        # self.first_gt_path = path.join(exo_mask_dir, sorted(os.listdir(exo_mask_dir))[0])
 
         if size < 0:
             self.im_transform = transforms.Compose([
