@@ -53,7 +53,7 @@ class XMemTrainer:
         if config['debug']:
             self.log_text_interval = self.log_image_interval = 1
 
-    def do_pass(self, data, it=0):
+    def do_pass(self, data, it=0, do_logging=False):
         # No need to store the gradient outside training
         torch.set_grad_enabled(self._is_train)
 
@@ -70,6 +70,8 @@ class XMemTrainer:
         selector = data['selector'].unsqueeze(2).unsqueeze(2)
         iou_mean = 0
         iou_count = 0
+        if torch.sum(first_frame_gt) < 5:
+            return
 
         with torch.cuda.amp.autocast(enabled=self.config['amp']):
             # image features never change, compute once
@@ -126,6 +128,8 @@ class XMemTrainer:
                 # Logging
                 if self._do_log:
                     self.integrator.add_dict(losses)
+                    if iou_count > 0:
+                        self.integrator.add_dict({'iou': iou_mean})
                     if self._is_train:
                         if it % self.log_image_interval == 0 and it != 0:
                             if self.logger is not None:
@@ -133,12 +137,11 @@ class XMemTrainer:
                                 size = (384, 384)
                                 self.logger.log_cv2('train/pairs', pool_pairs(images, size, num_filled_objects), it)
 
-            print(iou_mean)
             if self._is_train:
-                if (it) % self.log_text_interval == 0 and it != 0:
+                if do_logging and it != 0:
+                # if (it) % self.log_text_interval == 0 and it != 0:
                     if self.logger is not None:
                         self.logger.log_scalar('train/lr', self.scheduler.get_last_lr()[0], it)
-                        self.logger.log_scalar('train/iou', iou_mean, it)
                         self.logger.log_metrics('train', 'time', (time.time()-self.last_time)/self.log_text_interval, it)
                     self.last_time = time.time()
                     self.train_integrator.finalize('train', it)

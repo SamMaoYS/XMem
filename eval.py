@@ -161,7 +161,7 @@ total_frames = 0
 # Start eval
 for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect_stdout=False):
 
-    loader = DataLoader(vid_reader, batch_size=1, shuffle=False, num_workers=8)
+    loader = DataLoader(vid_reader, batch_size=1, shuffle=False, num_workers=0)
     vid_name = vid_reader.vid_name
     vid_length = len(loader)
     # no need to count usage for LT if the video is not that long anyway
@@ -176,6 +176,7 @@ for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect
     mapper = MaskMapper()
     processor = InferenceCore(network, config=config)
     first_mask_loaded = False
+    skip = 0
 
     for ti, data in enumerate(loader):
         with torch.cuda.amp.autocast(enabled=not args.benchmark):
@@ -201,6 +202,7 @@ for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect
                     first_mask_loaded = True
                 else:
                     # no point to do anything without a mask
+                    skip += 1
                     continue
 
             if args.flip:
@@ -264,7 +266,7 @@ for vid_reader in progressbar(meta_loader, max_value=len(meta_dataset), redirect
             #     if args.save_all or info['save'][0]:
             #         hkl.dump(prob, path.join(np_path, f'{frame[:-4]}.hkl'), mode='w', compression='lzf')
 
-
+print(f'{skip} skipped videos due to empty first frame mask')
 print(f'Total processing time: {total_process_time}')
 print(f'Total processed frames: {total_frames}')
 print(f'FPS: {total_frames / total_process_time}')

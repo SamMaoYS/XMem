@@ -178,8 +178,9 @@ class EgoExoVideoReader(Dataset):
         load_mask = self.use_all_mask or (gt_path == self.first_gt_path)
         if load_mask and path.exists(gt_path):
             mask = Image.open(gt_path).convert('P')
-            mask = mask.resize(shape[::-1])
+            mask = mask.resize(shape[::-1], Image.NEAREST)
             mask = np.array(mask, dtype=np.uint8)
+            mask[mask != 255] = 0
             data['mask'] = mask
 
         info['shape'] = shape
