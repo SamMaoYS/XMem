@@ -80,11 +80,8 @@ class VOSDataset(Dataset):
                         continue
 
                     vid = path.join(take_id, cam_name, object_name)
-                    self.frames[vid] = [None] * (len(frames) * 2)
+                    self.frames[vid] = [None] * len(frames)
                     for i, f in enumerate(frames):
-                        self.frames[vid][2 * i] = path.join(
-                            self.ego_cam_name, object_name, f
-                        )
                         self.frames[vid][2 * i + 1] = path.join(
                             cam_name, object_name, f
                         )
@@ -193,12 +190,15 @@ class VOSDataset(Dataset):
             ]
         )
 
+    def get_images(self, frame_path,):
+
+
     def __getitem__(self, idx):
         video = self.videos[idx]
         info = {}
         info["name"] = video
 
-        take_id = video.split("/")[0]
+        take_id, cam_name, object_name = video.split("/")[-3:]
 
         frames = self.frames[video]
         assert len(frames) % 2 == 0, "Number of frames must be even."
@@ -242,13 +242,18 @@ class VOSDataset(Dataset):
                 frames_idx = [fi - 1 for fi in frames_idx]
 
             sequence_seed = np.random.randint(2147483647)
+            ego_images = []
+            ego_masks = []
             images = []
             masks = []
             target_objects = []
             for f_idx in frames_idx:
                 cam_name, object_name, f_name = frames[f_idx].split("/")
                 rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
-                rgb_name = os.path.join(self.egoexo_root, take_id, cam_name, rgb_name)
+                rgb_path = os.path.join(self.egoexo_root, take_id, cam_name, rgb_name)
+                ego_rgb_path = os.path.join(
+                    self.egoexo_root, take_id, self.ego_cam_name, rgb_name
+                )
 
                 annotation_path = os.path.join(
                     self.egoexo_root, take_id, self.mask_file
@@ -258,36 +263,53 @@ class VOSDataset(Dataset):
                 masks_data = annotation["masks"]
 
                 gt_data = masks_data[object_name][cam_name][f_name]
+                ego_gt_data = masks_data[object_name][self.ego_cam_name][f_name]
 
-                info["frames"].append(rgb_name)
+                info["frames"].append(rgb_path)
 
-                this_im = Image.open(rgb_name).convert("RGB")
+                this_im = Image.open(rgb_path).convert("RGB")
+                this_ego_im = Image.open(ego_rgb_path).convert("RGB")
                 if self.augmentation:
                     reseed(sequence_seed)
                     this_im = self.all_im_dual_transform(this_im)
                     this_im = self.all_im_lone_transform(this_im)
+                    this_ego_im = self.all_im_dual_transform(this_ego_im)
+                    this_ego_im = self.all_im_lone_transform(this_ego_im)
                     reseed(sequence_seed)
                 this_gt = mask_utils.decode(gt_data) * 255
                 this_gt = Image.fromarray(this_gt)
+                this_ego_gt = mask_utils.decode(ego_gt_data) * 255
+                this_ego_gt = Image.fromarray(this_ego_gt)
                 if self.augmentation:
                     this_gt = self.all_gt_dual_transform(this_gt)
+                    this_ego_gt = self.all_gt_dual_transform(this_ego_gt)
 
                     pairwise_seed = np.random.randint(2147483647)
                     reseed(pairwise_seed)
                     this_im = self.pair_im_dual_transform(this_im)
                     this_im = self.pair_im_lone_transform(this_im)
+                    this_ego_im = self.pair_im_dual_transform(this_ego_im)
+                    this_ego_im = self.pair_im_lone_transform(this_ego_im)
                     reseed(pairwise_seed)
                     this_gt = self.pair_gt_dual_transform(this_gt)
+                    this_ego_gt = self.pair_gt_dual_transform(this_ego_gt)
                 else:
                     this_gt = self.final_gt_transform(this_gt)
+                    this_ego_gt = self.final_gt_transform(this_ego_gt)
                 this_im = self.final_im_transform(this_im)
+                this_ego_im = self.final_im_transform(this_ego_im)
                 this_gt = np.array(this_gt)
                 this_gt[this_gt != 255] = 0
+                this_ego_gt = np.array(this_ego_gt)
+                this_ego_gt[this_ego_gt != 255] = 0
 
                 images.append(this_im)
                 masks.append(this_gt)
+                ego_images.append(this_ego_im)
+                ego_masks.append(this_ego_gt)
 
             images = torch.stack(images, 0)
+            ego_images = torch.stack(ego_images, 0)
 
             labels = np.unique(masks[0])
             # Remove background
