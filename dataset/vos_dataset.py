@@ -190,8 +190,62 @@ class VOSDataset(Dataset):
             ]
         )
 
-    def get_images(self, frame_path,):
+    def get_images(self, frames_idx, take_root, frames, cam_name):
+        info_frames = []
+        images = []
+        masks = []
+        sequence_seed = np.random.randint(2147483647)
+        for f_idx in frames_idx:
+            _, object_name, f_name = frames[f_idx].split("/")
+            rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
+            # rgb_path = os.path.join(self.egoexo_root, take_id, cam_name, rgb_name)
+            rgb_path = os.path.join(take_root, cam_name, rgb_name)
 
+            annotation_path = os.path.join(take_root, self.mask_file)
+            with open(annotation_path, "r") as fp:
+                annotation = json.load(fp)
+            masks_data = annotation["masks"]
+
+            gt_data = masks_data[object_name][cam_name][f_name]
+
+            info_frames.append(rgb_path)
+
+            this_im = Image.open(rgb_path).convert("RGB")
+            if self.augmentation:
+                reseed(sequence_seed)
+                this_im = self.all_im_dual_transform(this_im)
+                this_im = self.all_im_lone_transform(this_im)
+                reseed(sequence_seed)
+            this_gt = mask_utils.decode(gt_data) * 255
+            this_gt = Image.fromarray(this_gt)
+            if self.augmentation:
+                this_gt = self.all_gt_dual_transform(this_gt)
+
+                pairwise_seed = np.random.randint(2147483647)
+                reseed(pairwise_seed)
+                this_im = self.pair_im_dual_transform(this_im)
+                this_im = self.pair_im_lone_transform(this_im)
+                reseed(pairwise_seed)
+                this_gt = self.pair_gt_dual_transform(this_gt)
+            else:
+                this_gt = self.final_gt_transform(this_gt)
+            this_im = self.final_im_transform(this_im)
+            this_gt = np.array(this_gt)
+            this_gt[this_gt != 255] = 0
+
+            images.append(this_im)
+            masks.append(this_gt)
+        return images, masks, info_frames
+
+    def one_hot_gt(self, masks, target_objects):
+        cls_gt = np.zeros((self.num_frames, 384, 384), dtype=np.int64)
+        first_frame_gt = np.zeros((1, self.max_num_obj, 384, 384), dtype=np.int64)
+        for i, l in enumerate(target_objects):
+            this_mask = masks == l
+            cls_gt[this_mask] = i + 1
+            first_frame_gt[0, i] = this_mask[0]
+        cls_gt = np.expand_dims(cls_gt, 1)
+        return cls_gt, first_frame_gt
 
     def __getitem__(self, idx):
         video = self.videos[idx]
@@ -238,95 +292,41 @@ class VOSDataset(Dataset):
             #     # Reverse time
             #     frames_idx = frames_idx[::-1]
 
-            if frames_idx[0] % 2 != 0:
-                frames_idx = [fi - 1 for fi in frames_idx]
+            # if frames_idx[0] % 2 != 0:
+            #     frames_idx = [fi - 1 for fi in frames_idx]
 
-            sequence_seed = np.random.randint(2147483647)
-            ego_images = []
-            ego_masks = []
-            images = []
-            masks = []
-            target_objects = []
-            for f_idx in frames_idx:
-                cam_name, object_name, f_name = frames[f_idx].split("/")
-                rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
-                rgb_path = os.path.join(self.egoexo_root, take_id, cam_name, rgb_name)
-                ego_rgb_path = os.path.join(
-                    self.egoexo_root, take_id, self.ego_cam_name, rgb_name
-                )
-
-                annotation_path = os.path.join(
-                    self.egoexo_root, take_id, self.mask_file
-                )
-                with open(annotation_path, "r") as fp:
-                    annotation = json.load(fp)
-                masks_data = annotation["masks"]
-
-                gt_data = masks_data[object_name][cam_name][f_name]
-                ego_gt_data = masks_data[object_name][self.ego_cam_name][f_name]
-
-                info["frames"].append(rgb_path)
-
-                this_im = Image.open(rgb_path).convert("RGB")
-                this_ego_im = Image.open(ego_rgb_path).convert("RGB")
-                if self.augmentation:
-                    reseed(sequence_seed)
-                    this_im = self.all_im_dual_transform(this_im)
-                    this_im = self.all_im_lone_transform(this_im)
-                    this_ego_im = self.all_im_dual_transform(this_ego_im)
-                    this_ego_im = self.all_im_lone_transform(this_ego_im)
-                    reseed(sequence_seed)
-                this_gt = mask_utils.decode(gt_data) * 255
-                this_gt = Image.fromarray(this_gt)
-                this_ego_gt = mask_utils.decode(ego_gt_data) * 255
-                this_ego_gt = Image.fromarray(this_ego_gt)
-                if self.augmentation:
-                    this_gt = self.all_gt_dual_transform(this_gt)
-                    this_ego_gt = self.all_gt_dual_transform(this_ego_gt)
-
-                    pairwise_seed = np.random.randint(2147483647)
-                    reseed(pairwise_seed)
-                    this_im = self.pair_im_dual_transform(this_im)
-                    this_im = self.pair_im_lone_transform(this_im)
-                    this_ego_im = self.pair_im_dual_transform(this_ego_im)
-                    this_ego_im = self.pair_im_lone_transform(this_ego_im)
-                    reseed(pairwise_seed)
-                    this_gt = self.pair_gt_dual_transform(this_gt)
-                    this_ego_gt = self.pair_gt_dual_transform(this_ego_gt)
-                else:
-                    this_gt = self.final_gt_transform(this_gt)
-                    this_ego_gt = self.final_gt_transform(this_ego_gt)
-                this_im = self.final_im_transform(this_im)
-                this_ego_im = self.final_im_transform(this_ego_im)
-                this_gt = np.array(this_gt)
-                this_gt[this_gt != 255] = 0
-                this_ego_gt = np.array(this_ego_gt)
-                this_ego_gt[this_ego_gt != 255] = 0
-
-                images.append(this_im)
-                masks.append(this_gt)
-                ego_images.append(this_ego_im)
-                ego_masks.append(this_ego_gt)
+            images, masks, info_frames = self.get_images(
+                frames_idx, os.path.join(self.egoexo_root, take_id), frames, cam_name
+            )
+            ego_images, ego_masks, _ = self.get_images(
+                frames_idx,
+                os.path.join(self.egoexo_root, take_id),
+                frames,
+                self.ego_cam_name,
+            )
+            info["frames"] = info_frames
 
             images = torch.stack(images, 0)
             ego_images = torch.stack(ego_images, 0)
 
-            labels = np.unique(masks[0])
+            labels = np.unique(ego_masks[0])
             # Remove background
             labels = labels[labels != 0]
 
+            target_objects = []
             if self.is_bl:
                 # Find large enough labels
                 good_lables = []
                 for l in labels:
-                    pixel_sum = (masks[0] == l).sum()
+                    pixel_sum = (ego_masks[0] == l).sum()
                     if pixel_sum > 10 * 10:
                         # OK if the object is always this small
                         # Not OK if it is actually much bigger
                         if pixel_sum > 30 * 30:
                             good_lables.append(l)
                         elif (
-                            max((masks[1] == l).sum(), (masks[2] == l).sum()) < 20 * 20
+                            max((ego_masks[1] == l).sum(), (ego_masks[2] == l).sum())
+                            < 20 * 20
                         ):
                             good_lables.append(l)
                 labels = np.array(good_lables, dtype=np.uint8)
@@ -347,13 +347,8 @@ class VOSDataset(Dataset):
 
         masks = np.stack(masks, 0)
         # Generate one-hot ground-truth
-        cls_gt = np.zeros((self.num_frames, 384, 384), dtype=np.int64)
-        first_frame_gt = np.zeros((1, self.max_num_obj, 384, 384), dtype=np.int64)
-        for i, l in enumerate(target_objects):
-            this_mask = masks == l
-            cls_gt[this_mask] = i + 1
-            first_frame_gt[0, i] = this_mask[0]
-        cls_gt = np.expand_dims(cls_gt, 1)
+        cls_gt, first_frame_gt = self.one_hot_gt(masks, target_objects)
+        ego_cls_gt, ego_first_frame_gt = self.one_hot_gt(ego_masks, target_objects)
 
         # 1 if object exist, 0 otherwise
         selector = [
@@ -365,6 +360,9 @@ class VOSDataset(Dataset):
             "rgb": images,
             "first_frame_gt": first_frame_gt,
             "cls_gt": cls_gt,
+            "ego_rgb": images,
+            "ego_first_frame_gt": first_frame_gt,
+            "ego_cls_gt": cls_gt,
             "selector": selector,
             "info": info,
         }
