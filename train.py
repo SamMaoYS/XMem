@@ -39,7 +39,6 @@ git_info = str(repo.active_branch) + " " + str(repo.head.commit.hexsha)
 local_rank = torch.distributed.get_rank()
 world_size = torch.distributed.get_world_size()
 torch.cuda.set_device(local_rank)
-
 print(f"I am rank {local_rank} in this world of size {world_size}!")
 
 network_in_memory = None

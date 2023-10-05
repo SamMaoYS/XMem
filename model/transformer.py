@@ -413,6 +413,9 @@ class Encoder(nn.Module):
         outx = self.sigmoid(self.decoder(featx))
         outy = self.sigmoid(self.decoder(featy))
 
+        # outx = self.decoder(featx)
+        # outy = self.decoder(featy)
+
         outx = torch.clamp(outx, min=self.eps, max=1 - self.eps)
         outy = torch.clamp(outy, min=self.eps, max=1 - self.eps)
 

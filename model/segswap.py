@@ -3,7 +3,7 @@ import torch.nn.functional as F
 import torchvision.models as models
 import torchvision.transforms as transforms
 
-import transformer
+from model import transformer
 
 
 def get_model(model_path):
@@ -54,10 +54,13 @@ def get_model(model_path):
     param = torch.load(resume_path_segswap)
     backbone.load_state_dict(param["backbone"])
     netEncoder.load_state_dict(param["encoder"])
-    backbone.eval()
-    netEncoder.eval()
+    # backbone.eval()
+    # netEncoder.eval()
     backbone.cuda()
     netEncoder.cuda()
+
+    for param in backbone.parameters():
+        param.requires_grad = False
 
     return backbone, netEncoder
 
@@ -87,23 +90,35 @@ def get_tensors(I1np, I2np, M1np):
     return I1, I2, tensor1, tensor2, tensor3
 
 
-def forward_pass(backbone, netEncoder, tensor1, tensor2, tensor3):
+def forward_pass(backbone, netEncoder, tensor1, tensor2, tensor3, tensor4):
+    b, c = tensor4.size()[:2]
+    h, w = tensor4.size()[-2:]
+    h = int(h / 16)
+    w = int(w / 16)
+    img_resize = transforms.Compose([transforms.Resize(torch.Size([h, w]))])
+    tmp_tensor4 = img_resize(tensor4)
+    random_mask2 = torch.BoolTensor(torch.Size([b, c, h, w])).fill_(False)
+    random_mask1 = torch.BoolTensor(torch.Size([b, c, h, w])).fill_(False)
+
+    if torch.rand(1).item() > 0.5 and tmp_tensor4.sum() > 0:
+        random_mask2 = tmp_tensor4 < 0.5
+
+    random_mask1 = random_mask1.cuda()
+    random_mask2 = random_mask2.cuda()
+
     with torch.no_grad():
         feat1 = backbone(tensor1)  ## feature
         feat1 = F.normalize(feat1, dim=1)  ## l2 normalization
         feat2 = backbone(tensor2)  ## features
         feat2 = F.normalize(feat2, dim=1)  ## l2 normalization
         # import pdb; pdb.set_trace()
-        fmask = backbone(tensor3.unsqueeze(0).repeat(1, 3, 1, 1))
+        fmask = backbone(tensor3.repeat(1, 3, 1, 1))
         fmask = F.normalize(fmask, dim=1)
-        # import pdb; pdb.set_trace()
 
-        # RX = torch.BoolTensor((1, 1, 30, 30)).fill_(False)
-        # RY = torch.BoolTensor((1, 1, 30, 30)).fill_(False)
-        out1, out2, featx, featy = netEncoder(feat1, feat2, fmask)  ## predictions
-        m1_final, m2_final = (
-            out1[0, 2].cpu().numpy(),
-            out2[0, 2].cpu().numpy(),
-        )  # consistent_mask(out1[0, 2].cpu().numpy(), out2[0, 2].cpu().numpy(), out1[0].cpu(), out2[0].cpu())
+    # RX = torch.BoolTensor((1, 1, 30, 30)).fill_(False)
+    # RY = torch.BoolTensor((1, 1, 30, 30)).fill_(False)
+    out1, out2, featx, featy = netEncoder(
+        feat1, feat2, fmask, random_mask1, random_mask2
+    )  ## predictions
 
-    return m1_final, m2_final, featx, featy
+    return out1.narrow(1, 2, 1), out2.narrow(1, 2, 1), featx, featy

@@ -82,9 +82,7 @@ class VOSDataset(Dataset):
                     vid = path.join(take_id, cam_name, object_name)
                     self.frames[vid] = [None] * len(frames)
                     for i, f in enumerate(frames):
-                        self.frames[vid][2 * i + 1] = path.join(
-                            cam_name, object_name, f
-                        )
+                        self.frames[vid][i] = path.join(cam_name, object_name, f)
                     self.videos.append(vid)
 
         print(
@@ -255,14 +253,13 @@ class VOSDataset(Dataset):
         take_id, cam_name, object_name = video.split("/")[-3:]
 
         frames = self.frames[video]
-        assert len(frames) % 2 == 0, "Number of frames must be even."
 
         trials = 0
         while trials < 5:
             info["frames"] = []  # Appended with actual frames
 
             num_frames = self.num_frames
-            length = int(len(frames) / 2)
+            length = len(frames)
             this_max_jump = min(len(frames), self.max_jump)
 
             # iterative sampling
@@ -346,6 +343,7 @@ class VOSDataset(Dataset):
         info["num_objects"] = max(1, len(target_objects))
 
         masks = np.stack(masks, 0)
+        ego_masks = np.stack(ego_masks, 0)
         # Generate one-hot ground-truth
         cls_gt, first_frame_gt = self.one_hot_gt(masks, target_objects)
         ego_cls_gt, ego_first_frame_gt = self.one_hot_gt(ego_masks, target_objects)
@@ -360,9 +358,9 @@ class VOSDataset(Dataset):
             "rgb": images,
             "first_frame_gt": first_frame_gt,
             "cls_gt": cls_gt,
-            "ego_rgb": images,
-            "ego_first_frame_gt": first_frame_gt,
-            "ego_cls_gt": cls_gt,
+            "ego_rgb": ego_images,
+            "ego_first_frame_gt": ego_first_frame_gt,
+            "ego_cls_gt": ego_cls_gt,
             "selector": selector,
             "info": info,
         }

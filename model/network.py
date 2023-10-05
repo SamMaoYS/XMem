@@ -44,13 +44,25 @@ class XMem(nn.Module):
         if model_weights is not None:
             self.load_weights(model_weights, init_as_zero_if_needed=True)
 
-    def encode_key(self, frame_ego, mask_ego, frame_exo, need_sk=True, need_ek=True):
+    def encode_key(
+        self,
+        frame_ego,
+        mask_ego,
+        frame_exo,
+        mask_exo,
+        need_sk=True,
+        need_ek=True,
+        return_ego=True,
+    ):
         # Determine input shape
         if len(frame_exo.shape) == 5:
             # shape is b*t*c*h*w
             need_reshape = True
             b, t = frame_exo.shape[:2]
             # flatten so that we can feed them into a 2D CNN
+            frame_ego = frame_ego.flatten(start_dim=0, end_dim=1)
+            mask_ego = mask_ego.flatten(start_dim=0, end_dim=1)
+            mask_exo = mask_exo.flatten(start_dim=0, end_dim=1)
             frame_exo = frame_exo.flatten(start_dim=0, end_dim=1)
         elif len(frame_exo.shape) == 4:
             # shape is b*c*h*w
@@ -59,44 +71,58 @@ class XMem(nn.Module):
             raise NotImplementedError
 
         # get paths from ims
-        Ix, Iy, tensor1, tensor2, tensor3 = segswap.get_tensors(
-            frame_ego, frame_exo, mask_ego
-        )
         mx, my, fx, fy = segswap.forward_pass(
-            self.backbone, self.netEncoder, tensor1, tensor2, tensor3
+            self.backbone, self.netEncoder, frame_ego, frame_exo, mask_ego, mask_exo
         )
 
-        f16, f8, f4 = self.key_encoder(frame_exo)
+        target_frames = [frame_exo]
+        if return_ego:
+            target_frames.append(frame_ego)
 
-        feat_cat = torch.concat([f16, fy.to(torch.float16)], dim=1).flatten(
-            start_dim=0, end_dim=1
-        )
-        f16 = self.fuse_feat(feat_cat)
+        out = {}
+        for i, target_frame in enumerate(target_frames):
+            f16, f8, f4 = self.key_encoder(target_frame)
 
-        key, shrinkage, selection = self.key_proj(f16, need_sk, need_ek)
+            fuse_src = fy if i == 0 else fx
+
+            feat_cat = torch.concat([f16, fuse_src.to(torch.float16)], dim=1)
+            f16 = self.fuse_feat(feat_cat)
+
+            key, shrinkage, selection = self.key_proj(f16, need_sk, need_ek)
+
+            if need_reshape:
+                # B*C*T*H*W
+                key = key.view(b, t, *key.shape[-3:]).transpose(1, 2).contiguous()
+                if shrinkage is not None:
+                    shrinkage = (
+                        shrinkage.view(b, t, *shrinkage.shape[-3:])
+                        .transpose(1, 2)
+                        .contiguous()
+                    )
+                if selection is not None:
+                    selection = (
+                        selection.view(b, t, *selection.shape[-3:])
+                        .transpose(1, 2)
+                        .contiguous()
+                    )
+
+                # B*T*C*H*W
+                f16 = f16.view(b, t, *f16.shape[-3:])
+                f8 = f8.view(b, t, *f8.shape[-3:])
+                f4 = f4.view(b, t, *f4.shape[-3:])
+            out[i] = {
+                "key": key,
+                "shrinkage": shrinkage,
+                "selection": selection,
+                "f16": f16,
+                "f8": f8,
+                "f4": f4,
+            }
 
         if need_reshape:
-            # B*C*T*H*W
-            key = key.view(b, t, *key.shape[-3:]).transpose(1, 2).contiguous()
-            if shrinkage is not None:
-                shrinkage = (
-                    shrinkage.view(b, t, *shrinkage.shape[-3:])
-                    .transpose(1, 2)
-                    .contiguous()
-                )
-            if selection is not None:
-                selection = (
-                    selection.view(b, t, *selection.shape[-3:])
-                    .transpose(1, 2)
-                    .contiguous()
-                )
-
-            # B*T*C*H*W
-            f16 = f16.view(b, t, *f16.shape[-3:])
-            f8 = f8.view(b, t, *f8.shape[-3:])
-            f4 = f4.view(b, t, *f4.shape[-3:])
-
-        return key, shrinkage, selection, f16, f8, f4, mx, my
+            mx = mx.view(b, t, *mx.shape[-3:])
+            my = my.view(b, t, *my.shape[-3:])
+        return out, mx, my
 
     def encode_value(self, frame, image_feat_f16, h16, masks, is_deep_update=True):
         num_objects = masks.shape[1]
@@ -256,4 +282,4 @@ class XMem(nn.Module):
                         print("Zero-initialized padding.")
                     src_dict[k] = torch.cat([src_dict[k], pads], 1)
 
-        self.load_state_dict(src_dict)
+        self.load_state_dict(src_dict, strict=False)

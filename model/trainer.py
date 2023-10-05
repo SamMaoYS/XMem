@@ -75,66 +75,86 @@ class XMemTrainer:
                 data[k] = v.cuda(non_blocking=True)
 
         out = {}
-        frames = data["rgb"]
+        frames = data["rgb"].float()
+        ego_frames = data["ego_rgb"].float()
+        cls_gt = data["cls_gt"].float()
+        ego_cls_gt = data["ego_cls_gt"].float()
         first_frame_gt = data["first_frame_gt"].float()
+        ego_first_frame_gt = data["ego_first_frame_gt"].float()
         b = frames.shape[0]
         num_filled_objects = [o.item() for o in data["info"]["num_objects"]]
         num_objects = first_frame_gt.shape[2]
         selector = data["selector"].unsqueeze(2).unsqueeze(2)
         iou_mean = 0
         iou_count = 0
-        if torch.sum(first_frame_gt) < 5:
+        if torch.sum(ego_first_frame_gt) < 5 and torch.sum(first_frame_gt) < 5:
             return
 
         with torch.cuda.amp.autocast(enabled=self.config["amp"]):
             # image features never change, compute once
-            key, shrinkage, selection, f16, f8, f4, mx, my = self.XMem(
-                "encode_key", frames
+            encoded_results, mx, my = self.XMem(
+                "encode_key", ego_frames, ego_cls_gt, frames, cls_gt
             )
+
+            key = encoded_results[0]["key"]
+            shrinkage = encoded_results[0]["shrinkage"]
+            selection = encoded_results[0]["selection"]
+            f16 = encoded_results[0]["f16"]
+            f8 = encoded_results[0]["f8"]
+            f4 = encoded_results[0]["f4"]
+
+            ego_key = encoded_results[1]["key"]
+            ego_shrinkage = encoded_results[1]["shrinkage"]
+            ego_selection = encoded_results[1]["selection"]
+            ego_f16 = encoded_results[1]["f16"]
+            ego_f8 = encoded_results[1]["f8"]
+            ego_f4 = encoded_results[1]["f4"]
 
             filler_one = torch.zeros(1, dtype=torch.int64)
             hidden = torch.zeros(
                 (b, num_objects, self.config["hidden_dim"], *key.shape[-2:])
             )
             v16, hidden = self.XMem(
-                "encode_value", frames[:, 0], f16[:, 0], hidden, first_frame_gt[:, 0]
+                "encode_value",
+                ego_frames[:, 0],
+                ego_f16[:, 0],
+                hidden,
+                ego_cls_gt[:, 0],
             )
             values = v16.unsqueeze(3)  # add the time dimension
-
+            v16, hidden = self.XMem(
+                "encode_value",
+                frames[:, 0],
+                f16[:, 0],
+                hidden,
+                my[:, 0],
+            )
+            values = torch.cat([values, v16.unsqueeze(3)], 3)
+            out["segswap_mx"] = mx
+            out["segswap_my"] = my
+            ref_keys = torch.cat([ego_key[:, :, 0], key[:, :, 0]], 3)
+            ref_shrinkage = (
+                torch.cat([ego_shrinkage[:, :, 0], shrinkage[:, :, 0]], 3)
+                if shrinkage is not None
+                else None
+            )
             for ti in range(1, self.num_frames):
-                if ti <= self.num_ref_frames:
-                    ref_values = values
-                    ref_keys = key[:, :, :ti]
-                    ref_shrinkage = (
-                        shrinkage[:, :, :ti] if shrinkage is not None else None
-                    )
-                else:
-                    # pick num_ref_frames random frames
-                    # this is not very efficient but I think we would
-                    # need broadcasting in gather which we don't have
-                    indices = [
-                        torch.cat(
-                            [
-                                filler_one,
-                                torch.randperm(ti - 1)[: self.num_ref_frames - 1] + 1,
-                            ]
-                        )
-                        for _ in range(b)
-                    ]
-                    ref_values = torch.stack(
-                        [values[bi, :, :, indices[bi]] for bi in range(b)], 0
-                    )
-                    ref_keys = torch.stack(
-                        [key[bi, :, indices[bi]] for bi in range(b)], 0
-                    )
-                    ref_shrinkage = (
-                        torch.stack(
-                            [shrinkage[bi, :, indices[bi]] for bi in range(b)], 0
-                        )
-                        if shrinkage is not None
-                        else None
-                    )
+                v16, hidden = self.XMem(
+                    "encode_value",
+                    ego_frames[:, ti],
+                    ego_f16[:, ti],
+                    hidden,
+                    ego_cls_gt[:, ti],
+                )
+                values = torch.cat([values, v16.unsqueeze(3)], 3)
+                ref_keys = torch.cat([ref_keys, ego_key[:, :, ti]], 3)
+                ref_shrinkage = (
+                    torch.cat([ref_shrinkage, ego_shrinkage[:, :, ti]], 3)
+                    if shrinkage is not None
+                    else None
+                )
 
+                ref_values = values
                 # Segment frame ti
                 memory_readout = self.XMem(
                     "read_memory",
@@ -165,6 +185,12 @@ class XMemTrainer:
                         is_deep_update=is_deep_update,
                     )
                     values = torch.cat([values, v16.unsqueeze(3)], 3)
+                    ref_keys = torch.cat([ref_keys, key[:, :, ti]], 3)
+                    ref_shrinkage = (
+                        torch.cat([ref_shrinkage, shrinkage[:, :, ti]], 3)
+                        if shrinkage is not None
+                        else None
+                    )
 
                 out[f"masks_{ti}"] = masks
                 out[f"logits_{ti}"] = logits
