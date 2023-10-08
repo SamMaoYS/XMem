@@ -39,6 +39,7 @@ class XMem(nn.Module):
         self.decoder = Decoder(self.value_dim, self.hidden_dim)
 
         self.backbone, self.netEncoder = segswap.get_model(config["segswap_model"])
+        self.backbone.train()
         self.netEncoder.train()
 
         if model_weights is not None:

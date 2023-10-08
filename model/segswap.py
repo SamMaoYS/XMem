@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import torchvision.models as models
 import torchvision.transforms as transforms
-
+import numpy as np
 from model import transformer
 
 
@@ -59,8 +59,8 @@ def get_model(model_path):
     backbone.cuda()
     netEncoder.cuda()
 
-    for param in backbone.parameters():
-        param.requires_grad = False
+    # for param in backbone.parameters():
+    #     param.requires_grad = False
 
     return backbone, netEncoder
 
@@ -91,34 +91,64 @@ def get_tensors(I1np, I2np, M1np):
 
 
 def forward_pass(backbone, netEncoder, tensor1, tensor2, tensor3, tensor4):
-    b, c = tensor4.size()[:2]
-    h, w = tensor4.size()[-2:]
-    h = int(h / 16)
-    w = int(w / 16)
-    img_resize = transforms.Compose([transforms.Resize(torch.Size([h, w]))])
-    tmp_tensor4 = img_resize(tensor4)
-    random_mask2 = torch.BoolTensor(torch.Size([b, c, h, w])).fill_(False)
-    random_mask1 = torch.BoolTensor(torch.Size([b, c, h, w])).fill_(False)
+    # b, c = tensor4.size()[:2]
+    # h, w = tensor4.size()[-2:]
+    # h = int(h / 16)
+    # w = int(w / 16)
+    # img_resize = transforms.Compose([transforms.Resize(torch.Size([h, w]))])
+    # tmp_tensor4 = img_resize(tensor4)
+    # random_mask2 = torch.BoolTensor(torch.Size([b, c, h, w])).fill_(False)
+    # random_mask1 = torch.BoolTensor(torch.Size([b, c, h, w])).fill_(False)
 
-    if torch.rand(1).item() > 0.5 and tmp_tensor4.sum() > 0:
-        random_mask2 = tmp_tensor4 < 0.5
+    # if torch.rand(1).item() > 0.5 and tmp_tensor4.sum() > 0:
+    #     random_mask2 = tmp_tensor4 < 0.5
 
-    random_mask1 = random_mask1.cuda()
-    random_mask2 = random_mask2.cuda()
+    # random_mask1 = random_mask1.cuda()
+    # random_mask2 = random_mask2.cuda()
 
-    with torch.no_grad():
-        feat1 = backbone(tensor1)  ## feature
-        feat1 = F.normalize(feat1, dim=1)  ## l2 normalization
-        feat2 = backbone(tensor2)  ## features
-        feat2 = F.normalize(feat2, dim=1)  ## l2 normalization
-        # import pdb; pdb.set_trace()
-        fmask = backbone(tensor3.repeat(1, 3, 1, 1))
-        fmask = F.normalize(fmask, dim=1)
+    # with torch.no_grad():
+    feat1 = backbone(tensor1)  ## feature
+    feat1 = F.normalize(feat1, dim=1)  ## l2 normalization
+    feat2 = backbone(tensor2)  ## features
+    feat2 = F.normalize(feat2, dim=1)  ## l2 normalization
+    # import pdb; pdb.set_trace()
+    fmask = backbone(tensor3.repeat(1, 3, 1, 1))
+    fmask = F.normalize(fmask, dim=1)
 
     # RX = torch.BoolTensor((1, 1, 30, 30)).fill_(False)
     # RY = torch.BoolTensor((1, 1, 30, 30)).fill_(False)
-    out1, out2, featx, featy = netEncoder(
-        feat1, feat2, fmask, random_mask1, random_mask2
-    )  ## predictions
+    out1, out2, featx, featy = netEncoder(feat1, feat2, fmask)  ## predictions
+
+    # visualize(tensor1, tensor2, tensor3, tensor4)
 
     return out1.narrow(1, 2, 1), out2.narrow(1, 2, 1), featx, featy
+
+
+def visualize(tensor1, tensor2, tensor3, tensor4):
+    from PIL import Image
+
+    b = tensor1.size()[0]
+
+    for i in range(b):
+        tensor1_i = tensor1[i].detach().cpu().numpy()
+        tensor1_i = np.transpose(tensor1_i, (1, 2, 0)) * 255
+        img_tensor1_i = Image.fromarray(tensor1_i.astype(np.uint8))
+
+        tensor2_i = tensor2[i].detach().cpu().numpy()
+        tensor2_i = np.transpose(tensor2_i, (1, 2, 0)) * 255
+        img_tensor2_i = Image.fromarray(tensor2_i.astype(np.uint8))
+
+        tensor3_i = tensor3[i].detach().cpu().numpy()
+        tensor3_i = np.transpose(tensor3_i, (1, 2, 0)) * 255
+        img_tensor3_i = Image.fromarray(
+            tensor3_i.reshape(tensor3_i.shape[:2]).astype(np.uint8)
+        )
+
+        tensor4_i = tensor4[i].detach().cpu().numpy()
+        tensor4_i = np.transpose(tensor4_i, (1, 2, 0)) * 255
+        img_tensor4_i = Image.fromarray(
+            tensor4_i.reshape(tensor4_i.shape[:2]).astype(np.uint8)
+        )
+        import pdb
+
+        pdb.set_trace()

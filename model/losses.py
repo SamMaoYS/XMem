@@ -61,8 +61,8 @@ class LossComputer:
         ious = []
 
         losses["total_loss"] = 0
-        losses["consistent_bce"] = 0
-        losses["consistent_dice"] = 0
+        # losses["consistent_bce"] = 0
+        # losses["consistent_dice"] = 0
         for ti in range(1, t):
             for bi in range(b):
                 loss, p = self.bce(
@@ -90,15 +90,16 @@ class LossComputer:
             losses[f"dice_loss_{ti}"] = dice_loss(
                 data[f"masks_{ti}"], data["cls_gt"][:, ti, 0]
             )
+
             # losses[f"consistent_bce"] += self.bce_logits_reduct(
             #     data[f"masks_{ti}"], data["segswap_my"][:, ti, 0:1]
             # )
-            losses[f"consistent_dice"] += dice_loss(
-                data[f"masks_{ti}"], data["segswap_my"][:, ti, 0]
-            )
+            # losses[f"consistent_dice"] += dice_loss(
+            #     data[f"masks_{ti}"], data["segswap_my"][:, ti, 0]
+            # )
             losses["total_loss"] += losses[f"dice_loss_{ti}"]
-        losses["total_loss"] += losses[f"consistent_bce"]
-        losses["total_loss"] += losses[f"consistent_dice"]
+        # losses["total_loss"] += losses[f"consistent_bce"]
+        # losses["total_loss"] += losses[f"consistent_dice"]
 
         loss_ego = self.bce_logits(data["segswap_mx"], data["ego_cls_gt"].float())
         loss_exo = self.bce_logits(data["segswap_my"], data["cls_gt"].float())
