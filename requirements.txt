@@ -7,3 +7,4 @@ tensorboard
 numpy
 pycocotools
 natsort
+opencv-python-headless
