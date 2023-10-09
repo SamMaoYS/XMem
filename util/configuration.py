@@ -110,7 +110,7 @@ class Configuration:
             "--s3_lr", help="Initial learning rate", default=1e-5, type=float
         )
         parser.add_argument("--s3_num_ref_frames", default=3, type=int)
-        parser.add_argument("--s3_num_frames", default=8, type=int)
+        parser.add_argument("--s3_num_frames", default=4, type=int)
         parser.add_argument("--s3_start_warm", default=20000, type=int)
         parser.add_argument("--s3_end_warm", default=70000, type=int)
 
