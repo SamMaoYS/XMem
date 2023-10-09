@@ -208,6 +208,8 @@ torch.autograd.set_grad_enabled(False)
 meta_loader = meta_dataset.get_datasets()
 
 # Load our checkpoint
+config["segswap_model"] = args.model
+config["eval"] = True
 network = XMem(config, args.model).cuda().eval()
 if args.model is not None:
     model_weights = torch.load(args.model)
@@ -222,7 +224,7 @@ total_frames = 0
 for vid_reader in progressbar(
     meta_loader, max_value=len(meta_dataset), redirect_stdout=False
 ):
-    loader = DataLoader(vid_reader, batch_size=1, shuffle=False, num_workers=0)
+    loader = DataLoader(vid_reader, batch_size=1, shuffle=False, num_workers=8)
     vid_name = vid_reader.vid_name
     vid_length = len(loader)
     # no need to count usage for LT if the video is not that long anyway
@@ -241,100 +243,95 @@ for vid_reader in progressbar(
     first_mask_loaded = False
     skip = 0
 
-    for ti, data in enumerate(loader):
-        with torch.cuda.amp.autocast(enabled=not args.benchmark):
-            rgb = data["rgb"].cuda()[0]
-            msk = data.get("mask")
-            info = data["info"]
-            frame = info["frame"][0]
-            take_id = info["take_id"][0]
-            shape = info["shape"]
-            is_exo = info["is_exo"][0]
-            need_resize = info["need_resize"][0]
+    try:
+        for ti, data in enumerate(loader):
+            with torch.cuda.amp.autocast(enabled=not args.benchmark):
+                rgb = data["rgb"].cuda()[0]
+                ego_rgb = data["ego_rgb"].cuda()[0]
+                msk = data["mask"]
+                info = data["info"]
+                frame = info["frame"][0]
+                take_id = info["take_id"][0]
+                shape = info["shape"]
+                need_resize = info["need_resize"][0]
 
-            """
-            For timing see https://discuss.pytorch.org/t/how-to-measure-time-in-pytorch/26964
-            Seems to be very similar in testing as my previous timing method 
-            with two cuda sync + time.time() in STCN though 
-            """
-            start = torch.cuda.Event(enable_timing=True)
-            end = torch.cuda.Event(enable_timing=True)
-            start.record()
+                """
+                For timing see https://discuss.pytorch.org/t/how-to-measure-time-in-pytorch/26964
+                Seems to be very similar in testing as my previous timing method 
+                with two cuda sync + time.time() in STCN though 
+                """
+                start = torch.cuda.Event(enable_timing=True)
+                end = torch.cuda.Event(enable_timing=True)
+                start.record()
 
-            if not first_mask_loaded:
-                if msk is not None:
-                    first_mask_loaded = True
-                else:
-                    # no point to do anything without a mask
-                    skip += 1
-                    continue
+                if args.flip:
+                    rgb = torch.flip(rgb, dims=[-1])
+                    msk = torch.flip(msk, dims=[-1]) if msk is not None else None
 
-            if args.flip:
-                rgb = torch.flip(rgb, dims=[-1])
-                msk = torch.flip(msk, dims=[-1]) if msk is not None else None
+                # Map possibly non-continuous labels to continuous ones
 
-            # Map possibly non-continuous labels to continuous ones
-            if msk is not None:
                 msk, labels = mapper.convert_mask(msk[0].numpy(), True)
                 msk = torch.Tensor(msk).cuda()
                 if need_resize:
                     msk = vid_reader.resize_mask(msk.unsqueeze(0))[0]
                 processor.set_all_labels(list(mapper.remappings.values()))
-            else:
-                labels = None
 
-            # Run the model on this frame
-            prob = processor.step(rgb, msk, labels, end=(ti == vid_length - 1))
-
-            # Upsample to original size if needed
-            if need_resize:
-                prob = F.interpolate(
-                    prob.unsqueeze(1), shape, mode="bilinear", align_corners=False
-                )[:, 0]
-
-            end.record()
-            torch.cuda.synchronize()
-            total_process_time += start.elapsed_time(end) / 1000
-            total_frames += 1
-
-            if args.flip:
-                prob = torch.flip(prob, dims=[-1])
-
-            # Probability mask -> index mask
-            out_mask = torch.max(prob, dim=0).indices
-            out_mask = (out_mask.detach().cpu().numpy()).astype(np.uint8)
-
-            if args.save_scores:
-                prob = (prob.detach().cpu().numpy() * 255).astype(np.uint8)
-
-            # Save the mask
-            if (args.save_all or info["save"][0]) and is_exo:
-                this_out_path = path.join(out_path, vid_name)
-                out_mask = mapper.remap_index_mask(out_mask)
-
-                cam_name, object_name, f_name = frame.split("/")
-                rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
-
-                out_img_coco = mask_utils.encode(
-                    np.asfortranarray((out_mask // 255).astype(np.uint8))
+                # Run the model on this frame
+                prob = processor.step(
+                    rgb, ego_rgb, msk, labels, end=(ti == vid_length - 1)
                 )
-                out_img_coco["counts"] = out_img_coco["counts"].decode("utf-8")
-                coco_out_path = path.join(out_path, "coco", vid_name)
-                os.makedirs(coco_out_path, exist_ok=True)
-                with open(
-                    path.join(coco_out_path, rgb_name[:-4] + ".json"), "w+"
-                ) as fp:
-                    json.dump(out_img_coco, fp)
 
-            # if args.save_scores:
-            #     np_path = path.join(args.output, 'Scores', vid_name)
-            #     os.makedirs(np_path, exist_ok=True)
-            #     if ti==len(loader)-1:
-            #         hkl.dump(mapper.remappings, path.join(np_path, f'backward.hkl'), mode='w')
-            #     if args.save_all or info['save'][0]:
-            #         hkl.dump(prob, path.join(np_path, f'{frame[:-4]}.hkl'), mode='w', compression='lzf')
+                # Upsample to original size if needed
+                if need_resize:
+                    prob = F.interpolate(
+                        prob.unsqueeze(1), shape, mode="bilinear", align_corners=False
+                    )[:, 0]
 
-print(f"{skip} skipped videos due to empty first frame mask")
+                end.record()
+                torch.cuda.synchronize()
+                total_process_time += start.elapsed_time(end) / 1000
+                total_frames += 1
+
+                if args.flip:
+                    prob = torch.flip(prob, dims=[-1])
+
+                # Probability mask -> index mask
+                out_mask = torch.max(prob, dim=0).indices
+                out_mask = (out_mask.detach().cpu().numpy()).astype(np.uint8)
+
+                if args.save_scores:
+                    prob = (prob.detach().cpu().numpy() * 255).astype(np.uint8)
+
+                # Save the mask
+                if args.save_all or info["save"][0]:
+                    this_out_path = path.join(out_path, vid_name)
+                    out_mask = mapper.remap_index_mask(out_mask)
+
+                    cam_name, object_name, f_name = frame.split("/")
+                    rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
+
+                    out_img_coco = mask_utils.encode(
+                        np.asfortranarray((out_mask // 255).astype(np.uint8))
+                    )
+                    out_img_coco["counts"] = out_img_coco["counts"].decode("utf-8")
+                    coco_out_path = path.join(out_path, "coco", vid_name)
+                    os.makedirs(coco_out_path, exist_ok=True)
+                    with open(
+                        path.join(coco_out_path, rgb_name[:-4] + ".json"), "w+"
+                    ) as fp:
+                        json.dump(out_img_coco, fp)
+    except Exception as e:
+        skip += 1
+        print(f"Error processing frame {take_id}: {e}")
+        # if args.save_scores:
+        #     np_path = path.join(args.output, 'Scores', vid_name)
+        #     os.makedirs(np_path, exist_ok=True)
+        #     if ti==len(loader)-1:
+        #         hkl.dump(mapper.remappings, path.join(np_path, f'backward.hkl'), mode='w')
+        #     if args.save_all or info['save'][0]:
+        #         hkl.dump(prob, path.join(np_path, f'{frame[:-4]}.hkl'), mode='w', compression='lzf')
+
+print(f"{skip} skipped videos due error")
 print(f"Total processing time: {total_process_time}")
 print(f"Total processed frames: {total_frames}")
 print(f"FPS: {total_frames / total_process_time}")

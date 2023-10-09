@@ -203,42 +203,32 @@ class EgoExoVideoReader(Dataset):
         assert self.object_name == object_name, AssertionError("Object name mismatch")
         rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
         im_path = os.path.join(self.data_root, self.take_id, cam_name, rgb_name)
+        ego_im_path = os.path.join(
+            self.data_root, self.take_id, self.ego_cam_name, rgb_name
+        )
         info["frame"] = frame
         info["take_id"] = self.take_id
         info["save"] = (self.to_save is None) or (frame in self.to_save)
 
         img = Image.open(im_path).convert("RGB")
-        is_exo = cam_name == self.exo_cam_name
-        if is_exo:
-            shape = np.array(img).shape[:2]
-        else:
-            size_path = os.path.join(
-                self.data_root, self.take_id, self.exo_cam_name, rgb_name
-            )
-            size_im = Image.open(size_path).convert("RGB")
-            shape = np.array(size_im).shape[:2]
-
-        if not is_exo:
-            img = img.resize(shape[::-1])
+        ego_img = Image.open(ego_im_path).convert("RGB")
+        shape = np.array(img).shape[:2]
+        ego_img = ego_img.resize(shape[::-1])
         img = self.im_transform(img)
+        ego_img = self.im_transform(ego_img)
 
-        gt_path = path.join(
-            self.data_root, self.take_id, self.object_name, self.ego_cam_name, f_name
-        )
-        load_mask = self.use_all_mask or (gt_path == self.first_gt_path)
-        if load_mask:
-            gt_data = self.masks_data[self.object_name][self.exo_cam_name][f_name]
-            this_gt = mask_utils.decode(gt_data) * 255
-            mask = Image.fromarray(this_gt).convert("P")
-            mask = mask.resize(shape[::-1], Image.NEAREST)
-            mask = np.array(mask, dtype=np.uint8)
-            mask[mask != 255] = 0
-            data["mask"] = mask
+        gt_data = self.masks_data[self.object_name][self.ego_cam_name][f_name]
+        this_gt = mask_utils.decode(gt_data) * 255
+        mask = Image.fromarray(this_gt).convert("P")
+        mask = mask.resize(shape[::-1], Image.NEAREST)
+        mask = np.array(mask, dtype=np.uint8)
+        mask[mask != 255] = 0
+        data["mask"] = mask
 
         info["shape"] = shape
-        info["is_exo"] = is_exo
         info["need_resize"] = not (self.size < 0)
         data["rgb"] = img
+        data["ego_rgb"] = ego_img
         data["info"] = info
 
         return data

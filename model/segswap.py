@@ -6,7 +6,7 @@ import numpy as np
 from model import transformer
 
 
-def get_model(model_path):
+def get_model(model_path, eval_mode=False):
     ## set gpu
     device = torch.device("cuda")
 
@@ -50,10 +50,13 @@ def get_model(model_path):
 
     netEncoder.cuda()
 
-    print("Loading net weight from {}".format(resume_path_segswap))
-    param = torch.load(resume_path_segswap)
-    backbone.load_state_dict(param["backbone"])
-    netEncoder.load_state_dict(param["encoder"])
+    if not eval_mode:
+        print("Loading net weight from {}".format(resume_path_segswap))
+        param = torch.load(resume_path_segswap)
+        backbone.load_state_dict(param["backbone"])
+        netEncoder.load_state_dict(param["encoder"])
+        backbone.train()
+        netEncoder.train()
     # backbone.eval()
     # netEncoder.eval()
     backbone.cuda()
@@ -90,7 +93,7 @@ def get_tensors(I1np, I2np, M1np):
     return I1, I2, tensor1, tensor2, tensor3
 
 
-def forward_pass(backbone, netEncoder, tensor1, tensor2, tensor3, tensor4):
+def forward_pass(backbone, netEncoder, tensor1, tensor2, tensor3):
     # b, c = tensor4.size()[:2]
     # h, w = tensor4.size()[-2:]
     # h = int(h / 16)

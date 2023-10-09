@@ -246,12 +246,12 @@ def process_take(take_id, input, pred, output, split, visualize=False):
 
                     rgb = np.array(Image.open(rgb_path))
 
-                    # blended_img = blend_mask(rgb, pred_mask.astype(np.uint8), alpha=0.5)
-                    # output_path = os.path.join(
-                    #     output, split, take_id, cam_name, object_name
-                    # )
-                    # os.makedirs(output_path, exist_ok=True)
-                    # save_img(blended_img, os.path.join(output_path, rgb_name))
+                    blended_img = blend_mask(rgb, pred_mask.astype(np.uint8), alpha=0.5)
+                    output_path = os.path.join(
+                        output, split, take_id, cam_name, object_name
+                    )
+                    os.makedirs(output_path, exist_ok=True)
+                    save_img(blended_img, os.path.join(output_path, rgb_name))
 
                     blended_img = blend_mask(rgb, gt_mask.astype(np.uint8), alpha=0.5)
                     output_path = os.path.join(

@@ -38,9 +38,9 @@ class XMem(nn.Module):
 
         self.decoder = Decoder(self.value_dim, self.hidden_dim)
 
-        self.backbone, self.netEncoder = segswap.get_model(config["segswap_model"])
-        self.backbone.train()
-        self.netEncoder.train()
+        self.backbone, self.netEncoder = segswap.get_model(
+            config["segswap_model"], config.get("eval", False)
+        )
 
         if model_weights is not None:
             self.load_weights(model_weights, init_as_zero_if_needed=True)
@@ -50,7 +50,6 @@ class XMem(nn.Module):
         frame_ego,
         mask_ego,
         frame_exo,
-        mask_exo,
         need_sk=True,
         need_ek=True,
         return_ego=True,
@@ -63,7 +62,6 @@ class XMem(nn.Module):
             # flatten so that we can feed them into a 2D CNN
             frame_ego = frame_ego.flatten(start_dim=0, end_dim=1)
             mask_ego = mask_ego.flatten(start_dim=0, end_dim=1)
-            mask_exo = mask_exo.flatten(start_dim=0, end_dim=1)
             frame_exo = frame_exo.flatten(start_dim=0, end_dim=1)
         elif len(frame_exo.shape) == 4:
             # shape is b*c*h*w
@@ -73,7 +71,7 @@ class XMem(nn.Module):
 
         # get paths from ims
         mx, my, fx, fy = segswap.forward_pass(
-            self.backbone, self.netEncoder, frame_ego, frame_exo, mask_ego, mask_exo
+            self.backbone, self.netEncoder, frame_ego, frame_exo, mask_ego
         )
 
         target_frames = [frame_exo]

@@ -115,8 +115,8 @@ class EgoExoTestDataset:
         splits_path = os.path.join(self.data_root, "split.json")
         with open(splits_path, "r") as fp:
             split_data = json.load(fp)
-        val_split = split_data["val"]
-        self.takes = [take_id[0] for take_id in val_split if take_id[0] in takes]
+        data_split = split_data[split]
+        self.takes = [take_id[0] for take_id in data_split if take_id[0] in takes]
 
         for take_id in self.takes:
             annotation_path = os.path.join(self.data_root, take_id, "annotation.json")
@@ -140,12 +140,9 @@ class EgoExoTestDataset:
                         continue
 
                     vid = path.join(take_id, cam_name, object_name)
-                    self.req_frame_list[vid] = [None] * (len(frames) * 2)
+                    self.req_frame_list[vid] = [None] * len(frames)
                     for i, f in enumerate(frames):
-                        self.req_frame_list[vid][2 * i] = path.join(
-                            self.ego_cam_name, object_name, f
-                        )
-                        self.req_frame_list[vid][2 * i + 1] = path.join(
+                        self.req_frame_list[vid][i] = path.join(
                             cam_name, object_name, f
                         )
                     self.vid_list.append(vid)
