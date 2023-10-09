@@ -56,7 +56,7 @@ class VOSDataset(Dataset):
         with open(splits_path, "r") as fp:
             split_data = json.load(fp)
         train_split = split_data["train"]
-        self.takes = [take_id[0] for take_id in train_split if take_id[0] in takes]
+        self.takes = [take_id for take_id in train_split if take_id in takes]
 
         for take_id in self.takes:
             annotation_path = os.path.join(self.egoexo_root, take_id, "annotation.json")
