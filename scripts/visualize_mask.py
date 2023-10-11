@@ -31,8 +31,7 @@ def getMidDist(gt_mask, pred_mask):
         gt_bigc = max(gt_contours, key=cv2.contourArea)
         pred_bigc = max(pred_contours, key=cv2.contourArea)
     except:
-        print("no contour")
-        return -1
+        return np.nan
 
     gt_mid = gt_bigc.mean(axis=0)[0]
     pred_mid = pred_bigc.mean(axis=0)[0]
@@ -59,8 +58,7 @@ def getMidBinning(gt_mask, pred_mask, bin_size=5):
         gt_bigc = max(gt_contours, key=cv2.contourArea)
         pred_bigc = max(pred_contours, key=cv2.contourArea)
     except:
-        print("no contour")
-        return -1
+        return np.nan
 
     gt_mid = gt_bigc.mean(axis=0)[0]
     pred_mid = pred_bigc.mean(axis=0)[0]
@@ -153,6 +151,14 @@ def main(args):
     print(f"Object Mean IoU: {object_mean_iou}")
     print(f"Mean IoU: {mean_iou}")
 
+    mean_mid_dist = df["mid_dist"].mean()
+    mean_mid_dist_norm = df["mid_dist_norm"].mean()
+    mean_mid_binning = df["mid_binning"].mean()
+
+    print(f"mean_mid_dist: {mean_mid_dist}")
+    print(f"mean_mid_dist_norm: {mean_mid_dist_norm}")
+    print(f"mean_mid_binning: {mean_mid_binning}")
+
 
 def process_take(take_id, input, pred, output, split, visualize=False):
     annotation_path = os.path.join(input, take_id, "annotation.json")
@@ -233,9 +239,33 @@ def process_take(take_id, input, pred, output, split, visualize=False):
                 outer = np.logical_or(pred_mask == 1, gt_mask == 1)
                 iou = np.sum(inner) / np.sum(outer)
 
+                mid_dist = getMidDist(gt_mask, pred_mask)
+                mid_dist_norm = getMidDistNorm(gt_mask, pred_mask)
+                mid_binning = getMidBinning(gt_mask, pred_mask)
+
                 row = pd.DataFrame(
-                    [[take_id, cam_name, object_name, f_name, iou]],
-                    columns=["take", "camera", "object", "frame", "iou"],
+                    [
+                        [
+                            take_id,
+                            cam_name,
+                            object_name,
+                            f_name,
+                            iou,
+                            mid_dist,
+                            mid_dist_norm,
+                            mid_binning,
+                        ]
+                    ],
+                    columns=[
+                        "take",
+                        "camera",
+                        "object",
+                        "frame",
+                        "iou",
+                        "mid_dist",
+                        "mid_dist_norm",
+                        "mid_binning",
+                    ],
                 )
                 df_list.append(row)
                 count += 1
