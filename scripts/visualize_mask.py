@@ -31,7 +31,6 @@ def getMidDist(gt_mask, pred_mask):
         gt_bigc = max(gt_contours, key=cv2.contourArea)
         pred_bigc = max(pred_contours, key=cv2.contourArea)
     except:
-        print("no contour")
         return np.nan
 
     gt_mid = gt_bigc.mean(axis=0)[0]
@@ -59,7 +58,6 @@ def getMidBinning(gt_mask, pred_mask, bin_size=5):
         gt_bigc = max(gt_contours, key=cv2.contourArea)
         pred_bigc = max(pred_contours, key=cv2.contourArea)
     except:
-        print("no contour")
         return np.nan
 
     gt_mid = gt_bigc.mean(axis=0)[0]
@@ -127,7 +125,7 @@ def main(args):
         print("No split found")
         return
     if args.compute_stats:
-        takes = [take_id for take_id in split_data[args.split]]
+        takes = [take_id[0] for take_id in split_data[args.split]]
         df_list = []
         for take_id in tqdm(takes):
             df_i = process_take(
