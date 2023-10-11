@@ -125,6 +125,8 @@ class EgoExoTestDataset:
             masks = annotation["masks"]
 
             for object_name, cams in masks.items():
+                if cams.get(self.ego_cam_name) is None:
+                    continue
                 ego_frames = list(cams[self.ego_cam_name].keys())
                 for cam_name, cam_data in cams.items():
                     if not os.path.isdir(
