@@ -125,7 +125,7 @@ def main(args):
         print("No split found")
         return
     if args.compute_stats:
-        takes = [take_id[0] for take_id in split_data[args.split]]
+        takes = [take_id for take_id in split_data[args.split]]
         df_list = []
         for take_id in tqdm(takes):
             df_i = process_take(
