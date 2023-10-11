@@ -148,7 +148,7 @@ class Configuration:
         )
 
         # # Multiprocessing parameters, not set by users
-        # parser.add_argument('--local_rank', default=0, type=int, help='Local rank of this process')
+        parser.add_argument('--local_rank', default=0, type=int, help='Local rank of this process')
 
         if unknown_arg_ok:
             args, _ = parser.parse_known_args()
