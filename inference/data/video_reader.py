@@ -227,7 +227,7 @@ class EgoExoVideoReader(Dataset):
         )
         load_mask = self.use_all_mask or (gt_path == self.first_gt_path)
         if load_mask:
-            gt_data = self.masks_data[self.object_name][self.exo_cam_name][f_name]
+            gt_data = self.masks_data[self.object_name][self.ego_cam_name][f_name]
             this_gt = mask_utils.decode(gt_data) * 255
             mask = Image.fromarray(this_gt).convert("P")
             mask = mask.resize(shape[::-1], Image.NEAREST)

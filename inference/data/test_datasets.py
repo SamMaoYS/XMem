@@ -116,7 +116,7 @@ class EgoExoTestDataset:
         with open(splits_path, "r") as fp:
             split_data = json.load(fp)
         val_split = split_data["val"]
-        self.takes = [take_id[0] for take_id in val_split if take_id[0] in takes]
+        self.takes = [take_id for take_id in val_split if take_id in takes]
 
         for take_id in self.takes:
             annotation_path = os.path.join(self.data_root, take_id, "annotation.json")
