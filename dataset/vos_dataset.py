@@ -247,8 +247,10 @@ class VOSDataset(Dataset):
             images = []
             masks = []
             target_objects = []
+            is_ego = []
             for f_idx in frames_idx:
                 cam_name, object_name, f_name = frames[f_idx].split("/")
+                is_ego.append(cam_name == self.ego_cam_name)
                 rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
                 rgb_name = os.path.join(self.egoexo_root, take_id, cam_name, rgb_name)
 
@@ -290,6 +292,7 @@ class VOSDataset(Dataset):
                 masks.append(this_gt)
 
             images = torch.stack(images, 0)
+            is_ego = torch.BoolTensor(is_ego)
 
             labels = np.unique(masks[0])
             # Remove background
@@ -347,6 +350,7 @@ class VOSDataset(Dataset):
             "cls_gt": cls_gt,
             "selector": selector,
             "info": info,
+            "is_ego": is_ego,
         }
 
         return data
