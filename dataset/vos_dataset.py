@@ -357,12 +357,12 @@ class VOSDataset(Dataset):
         selector = torch.FloatTensor(selector)
 
         data = {
-            "rgb": images,
-            "first_frame_gt": first_frame_gt,
-            "cls_gt": cls_gt,
-            "ego_rgb": ego_images,
-            "ego_first_frame_gt": ego_first_frame_gt,
-            "ego_cls_gt": ego_cls_gt,
+            "ego_rgb": images,
+            "ego_first_frame_gt": first_frame_gt,
+            "ego_cls_gt": cls_gt,
+            "rgb": ego_images,
+            "first_frame_gt": ego_first_frame_gt,
+            "cls_gt": ego_cls_gt,
             "selector": selector,
             "info": info,
         }
