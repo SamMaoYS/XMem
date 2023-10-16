@@ -84,11 +84,11 @@ class VOSDataset(Dataset):
                     vid = path.join(take_id, cam_name, object_name)
                     self.frames[vid] = [None] * (len(frames) * 2)
                     for i, f in enumerate(frames):
-                        self.frames[vid][2 * i] = path.join(
-                            self.ego_cam_name, object_name, f
-                        )
                         self.frames[vid][2 * i + 1] = path.join(
                             cam_name, object_name, f
+                        )
+                        self.frames[vid][2 * i] = path.join(
+                            self.ego_cam_name, object_name, f
                         )
                     self.videos.append(vid)
 
