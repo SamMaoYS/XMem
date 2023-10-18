@@ -15,7 +15,7 @@ def main(args):
         print("No split found")
         return
 
-    takes = [take_id[0] for take_id in split_data[args.split]]
+    takes = [take_id for take_id in split_data[args.split]]
     for take_id in tqdm(takes):
         result = process_take(take_id, args.input, args.pred)
 

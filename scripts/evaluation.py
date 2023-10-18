@@ -365,7 +365,6 @@ if __name__ == "__main__":
     take_metrics = {}
 
     for take_id in tqdm.tqdm(test_ids):
-        take_id = take_id[0]
         print(f"Processing take {take_id}")
         # Load the GT annotations
         gt_file = f"{args.datapath}/{take_id}/annotation.json"
