@@ -248,9 +248,9 @@ def processGTPred_EXOEGO(take_annotation, gt, pred, object_ids):
                 gt_masks_exo = gt["masks"][object_id][exo_cam]
             if (
                 object_id in pred["masks"].keys()
-                and f"{exo_cam}_{EGOCAM}" in pred["masks"][object_id].keys()
+                and f"{EGOCAM}" in pred["masks"][object_id].keys()
             ):
-                pred_masks_ego = pred["masks"][object_id][f"{exo_cam}_{EGOCAM}"]
+                pred_masks_ego = pred["masks"][object_id][f"{EGOCAM}"]
 
             for frame_idx in gt_masks_exo.keys():
                 if (
@@ -265,10 +265,13 @@ def processGTPred_EXOEGO(take_annotation, gt, pred, object_ids):
                     gt_mask = np.zeros((H, W), dtype=np.uint8)
                 else:
                     gt_mask = mask_utils.decode(gt_masks_ego[frame_idx])
-                    gt_mask = reshape_img_nopad(gt_mask)
+                    gt_mask = reshape_img_nopad(gt_mask, 960)
 
                 # breakpoint()
-                pred_mask = mask_utils.decode(pred_masks_ego[frame_idx])
+                if frame_idx in pred_masks_ego:
+                    pred_mask = mask_utils.decode(pred_masks_ego[frame_idx])
+                else:
+                    pred_mask = np.zeros_like(gt_mask)
 
                 # iou and shape accuracy
                 iou, shape_acc = eval_mask(gt_mask, pred_mask)
