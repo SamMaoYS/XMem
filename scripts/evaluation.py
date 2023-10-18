@@ -130,11 +130,10 @@ def processGTPred_EGOEXO(datapath, take_id, take_annotation, gt, pred, object_id
 
             for frame_idx in gt_masks_ego.keys():
                 if (
-                    frame_idx
+                    int(frame_idx)
                     not in take_annotation["object_masks"][object_id][exo_cam][
-                        # "annotated_frames"
-                        "annotation"
-                    ].keys()
+                        "annotated_frames"
+                    ]
                 ):
                     continue
 
