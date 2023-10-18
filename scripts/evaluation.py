@@ -130,10 +130,11 @@ def processGTPred_EGOEXO(datapath, take_id, take_annotation, gt, pred, object_id
 
             for frame_idx in gt_masks_ego.keys():
                 if (
-                    int(frame_idx)
+                    frame_idx
                     not in take_annotation["object_masks"][object_id][exo_cam][
-                        "annotated_frames"
-                    ]
+                        # "annotated_frames"
+                        "annotation"
+                    ].keys()
                 ):
                     continue
 
@@ -257,10 +258,11 @@ def processGTPred_EXOEGO(take_annotation, gt, pred, object_ids):
 
             for frame_idx in gt_masks_exo.keys():
                 if (
-                    int(frame_idx)
-                    not in take_annotation["object_masks"][object_id][EGOCAM][
-                        "annotated_frames"
-                    ]
+                    frame_idx
+                    not in take_annotation["object_masks"][object_id][exo_cam][
+                        # "annotated_frames"
+                        "annotation"
+                    ].keys()
                 ):
                     continue
 
