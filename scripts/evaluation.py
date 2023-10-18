@@ -119,6 +119,10 @@ def processGTPred_EGOEXO(datapath, take_id, take_annotation, gt, pred, object_id
                 gt_masks_ego = gt["masks"][object_id][EGOCAM]
             if exo_cam in gt["masks"][object_id].keys():
                 gt_masks_exo = gt["masks"][object_id][exo_cam]
+
+            if pred.get("masks") is None:
+                continue
+
             if (
                 object_id in pred["masks"].keys()
                 and f"{exo_cam}" in pred["masks"][object_id].keys()
