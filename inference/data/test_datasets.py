@@ -144,11 +144,11 @@ class EgoExoTestDataset:
                     vid = path.join(take_id, cam_name, object_name)
                     self.req_frame_list[vid] = [None] * (len(frames) * 2)
                     for i, f in enumerate(frames):
-                        self.req_frame_list[vid][2 * i] = path.join(
-                            self.ego_cam_name, object_name, f
-                        )
                         self.req_frame_list[vid][2 * i + 1] = path.join(
                             cam_name, object_name, f
+                        )
+                        self.req_frame_list[vid][2 * i] = path.join(
+                            self.ego_cam_name, object_name, f
                         )
                     self.vid_list.append(vid)
         self.size = size
@@ -161,8 +161,8 @@ class EgoExoTestDataset:
             obj = tmp[-1]
             yield EgoExoVideoReader(
                 video,
-                path.join(self.data_root, take, self.ego_cam_name, obj),
                 path.join(self.data_root, take, exo_cam_name, obj),
+                path.join(self.data_root, take, self.ego_cam_name, obj),
                 size=self.size,
                 to_save=self.req_frame_list[video],
                 use_all_mask=False,
