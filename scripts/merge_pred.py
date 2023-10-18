@@ -19,6 +19,10 @@ def main(args):
     for take_id in tqdm(takes):
         result = process_take(take_id, args.input, args.pred)
 
+        if not os.path.isdir(os.path.join(args.pred, take_id)):
+            result = {}
+            os.makedirs(os.path.join(args.pred, take_id))
+
         with open(
             os.path.join(args.pred, take_id, "pred_annotations.json"), "w+"
         ) as fp:
