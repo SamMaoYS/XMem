@@ -96,6 +96,7 @@ if __name__ == "__main__":
         if take_id not in [
             "ac259bd8-f9a1-4456-99b3-610f80351c06",
             "e8cf53f3-a9e3-45b6-a313-10765ae183e2",
+            "7abe1f04-6712-4325-b49d-4bb65bd30eec",
         ]:
             continue
         print(f"Processing take {take_id}")
@@ -114,7 +115,7 @@ if __name__ == "__main__":
 
             pdb.set_trace()
         obj = random.choice(list(pred["masks"].keys()))
-        if obj not in ["basketball", "steel plate_0"]:
+        if obj not in ["basketball", "steel plate_0", "instruction manual _0"]:
             continue
         while len(list(pred["masks"][obj].keys())) <= 0:
             obj = random.choice(list(pred["masks"].keys()))
