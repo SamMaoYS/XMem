@@ -121,6 +121,9 @@ if __name__ == "__main__":
         else:
             query_cam = "_".join(CAM.split("_")[:-1])
             target_cam = CAM.split("_")[-1]
+        import pdb
+
+        pdb.set_trace()
 
         for frame_idx in gt["masks"][obj][query_cam].keys():
             idx = max(int(frame_idx) // 30 + 1, 0)
