@@ -111,9 +111,7 @@ if __name__ == "__main__":
 
         # breakpoint()
         if pred.get("masks") is None:
-            import pdb
-
-            pdb.set_trace()
+            continue
         obj = random.choice(list(pred["masks"].keys()))
         if obj not in ["basketball", "steel plate_0", "instruction manual _0"]:
             continue
