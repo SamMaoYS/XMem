@@ -47,6 +47,11 @@ def reshape_img_nopad(img, max_dim=480):
     return img
 
 
+def reshape_img_nopad_square(img, max_dim=480):
+    img = cv2.resize(img, (max_dim, max_dim), interpolation=cv2.INTER_NEAREST)
+    return img
+
+
 def remove_pad(img, orig_size):
     cur_H, cur_W = img.shape[:2]
     orig_H, orig_W = orig_size
@@ -289,11 +294,11 @@ def processGTPred_EXOEGO(take_annotation, gt, pred, object_ids):
                     continue
 
                 if not frame_idx in gt_masks_ego:
-                    gt_mask = np.zeros((H, W), dtype=np.uint8)
+                    gt_mask = np.zeros((960, 960), dtype=np.uint8)
                     gt_obj_exists = 0
                 else:
                     gt_mask = mask_utils.decode(gt_masks_ego[frame_idx])
-                    gt_mask = reshape_img_nopad(gt_mask, 960)
+                    gt_mask = reshape_img_nopad_square(gt_mask, 960)
                     gt_obj_exists = 1
 
                 # breakpoint()
