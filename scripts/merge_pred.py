@@ -59,10 +59,6 @@ def process_take(take_id, input, pred):
                     pred_mask_data = json.load(fp)
                 pred_masks[object_name][cam_name][f_name] = pred_mask_data
                 empty = False
-    if empty:
-        import pdb
-
-        pdb.set_trace()
     return {"masks": pred_masks}
 
 
