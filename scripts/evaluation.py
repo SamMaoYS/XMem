@@ -155,17 +155,18 @@ def processGTPred_EGOEXO(datapath, take_id, take_annotation, gt, pred, object_id
 
                 if not frame_idx in gt_masks_exo:
                     if orig_mask_shape[0] < orig_mask_shape[1]:
-                        gt_mask = np.zeros((270, 480), dtype=np.uint8)
+                        gt_mask = np.zeros((480, 480), dtype=np.uint8)
                     else:
-                        gt_mask = np.zeros((480, 270), dtype=np.uint8)
+                        gt_mask = np.zeros((480, 480), dtype=np.uint8)
 
                     gt_obj_exists = 0
                 else:
                     gt_mask = mask_utils.decode(gt_masks_exo[frame_idx])
                     # reshaping without padding for evaluation
-                    gt_mask = reshape_img_nopad(gt_mask, 960)
+                    gt_mask = reshape_img_nopad_square(gt_mask, 480)
 
                     gt_obj_exists = 1
+                gt_mask = reshape_img_nopad_square(gt_mask, 480)
 
                 try:
                     if frame_idx in pred_masks_exo:
@@ -176,6 +177,8 @@ def processGTPred_EGOEXO(datapath, take_id, take_annotation, gt, pred, object_id
                     # pred_mask = remove_pad(pred_mask, orig_size=orig_mask_shape)
                 except:
                     breakpoint()
+
+                pred_mask = reshape_img_nopad_square(pred_mask, 480)
 
                 pred_obj_exists = int(np.any(pred_mask > 0))
 
