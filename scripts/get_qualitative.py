@@ -109,6 +109,10 @@ if __name__ == "__main__":
             pred = json.load(f)
 
         # breakpoint()
+        if pred.get("masks") is None:
+            import pdb
+
+            pdb.set_trace()
         obj = random.choice(list(pred["masks"].keys()))
         if obj not in ["basketball", "steel plate_0"]:
             continue
