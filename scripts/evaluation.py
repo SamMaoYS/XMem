@@ -294,18 +294,19 @@ def processGTPred_EXOEGO(take_annotation, gt, pred, object_ids):
                     continue
 
                 if not frame_idx in gt_masks_ego:
-                    gt_mask = np.zeros((960, 960), dtype=np.uint8)
+                    gt_mask = np.zeros((H, W), dtype=np.uint8)
                     gt_obj_exists = 0
                 else:
                     gt_mask = mask_utils.decode(gt_masks_ego[frame_idx])
-                    gt_mask = reshape_img_nopad_square(gt_mask, 960)
                     gt_obj_exists = 1
+                gt_mask = reshape_img_nopad_square(gt_mask, 480)
 
                 # breakpoint()
                 if frame_idx in pred_masks_ego:
                     pred_mask = mask_utils.decode(pred_masks_ego[frame_idx])
                 else:
                     pred_mask = np.zeros_like(gt_mask)
+                pred_mask = reshape_img_nopad_square(pred_mask, 480)
 
                 pred_obj_exists = int(np.any(pred_mask > 0))
 
