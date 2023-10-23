@@ -116,13 +116,13 @@ if __name__ == "__main__":
             obj = random.choice(list(pred["masks"].keys()))
         CAM = random.choice(list(pred["masks"][obj].keys()))
         if args.reverse:
-            query_cam = "_".join(CAM.split("_")[:1])
-            target_cam = "_".join(CAM.split("_")[1:])
+            # query_cam = "_".join(CAM.split("_")[:1])
+            # target_cam = "_".join(CAM.split("_")[1:])
+            target_cam = CAM
+            query_cam = "aria01_214-1"
         else:
-            query_cam = "_".join(CAM.split("_")[:-1])
-            target_cam = CAM.split("_")[-1]
-        query_cam = CAM
-        target_cam = CAM
+            target_cam = CAM
+            query_cam = CAM
 
         for frame_idx in gt["masks"][obj][query_cam].keys():
             idx = max(int(frame_idx) // 30 + 1, 0)
