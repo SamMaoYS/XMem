@@ -115,7 +115,7 @@ class EgoExoTestDataset:
         splits_path = os.path.join(self.data_root, "split.json")
         with open(splits_path, "r") as fp:
             split_data = json.load(fp)
-        val_split = split_data["val"]
+        val_split = split_data[split]
         self.takes = [take_id for take_id in val_split if take_id in takes]
 
         for take_id in self.takes:
