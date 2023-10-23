@@ -276,7 +276,7 @@ def processGTPred_EXOEGO(take_annotation, gt, pred, object_ids):
                 object_id in pred["masks"].keys()
                 and f"{EGOCAM}" in pred["masks"][object_id].keys()
             ):
-                pred_masks_ego = pred["masks"][object_id][f"{EGOCAM}"]
+                pred_masks_ego = pred["masks"][object_id][exo_cam]
 
             for frame_idx in gt_masks_exo.keys():
                 if (
