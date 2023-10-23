@@ -207,6 +207,8 @@ class EgoExoVideoReader(Dataset):
         info["take_id"] = self.take_id
         info["save"] = (self.to_save is None) or (frame in self.to_save)
 
+        if not os.path.isfile(im_path):
+            return
         img = Image.open(im_path).convert("RGB")
         is_exo = cam_name == self.exo_cam_name
         if is_exo:
