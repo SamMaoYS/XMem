@@ -278,6 +278,7 @@ def processGTPred_EXOEGO(take_annotation, gt, pred, object_ids):
                 gt_masks_exo = gt["masks"][object_id][exo_cam]
 
             if pred.get("masks") is None:
+                import pdb; pdb.set_trace()
                 continue
 
             if (
