@@ -38,6 +38,7 @@ def process_take(take_id, input, pred):
     pred_masks = {}
     for object_name, cams in masks.items():
         pred_masks[object_name] = {}
+        empty = True
         for cam_name, cam_data in cams.items():
             if not os.path.isdir(os.path.join(input, take_id, cam_name)):
                 continue
@@ -57,6 +58,11 @@ def process_take(take_id, input, pred):
                 with open(pred_mask_path, "r") as fp:
                     pred_mask_data = json.load(fp)
                 pred_masks[object_name][cam_name][f_name] = pred_mask_data
+                empty = False
+        if empty:
+            import pdb
+
+            pdb.set_trace()
     return {"masks": pred_masks}
 
 
