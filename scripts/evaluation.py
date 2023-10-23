@@ -9,7 +9,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 import metrics
 
-EVALMODE = "val"  # it can also be test
+EVALMODE = "test"  # it can also be test
 
 # Threshold for the Iou Matching
 IOUTHRES = 0.1
