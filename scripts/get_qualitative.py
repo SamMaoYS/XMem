@@ -127,6 +127,9 @@ if __name__ == "__main__":
         for frame_idx in gt["masks"][obj][query_cam].keys():
             idx = max(int(frame_idx) // 30 + 1, 0)
             frame = cv2.imread(f"{args.datapath}/{take_id}/{target_cam}/{idx:06d}.jpg")
+            import pdb
+
+            pdb.set_trace()
             mask = mask_utils.decode(pred["masks"][obj][CAM][frame_idx])
             # breakpoint()
             try:
