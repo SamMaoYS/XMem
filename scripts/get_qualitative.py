@@ -112,77 +112,92 @@ if __name__ == "__main__":
         # breakpoint()
         if pred.get("masks") is None:
             continue
-        obj = random.choice(list(pred["masks"].keys()))
-        if obj not in ["basketball", "steel plate_0", "instruction manual _0"]:
-            continue
-        while len(list(pred["masks"][obj].keys())) <= 0:
-            obj = random.choice(list(pred["masks"].keys()))
-        CAM = random.choice(list(pred["masks"][obj].keys()))
-        if args.reverse:
-            # query_cam = "_".join(CAM.split("_")[:1])
-            # target_cam = "_".join(CAM.split("_")[1:])
-            target_cam = CAM
-            query_cam = "aria01_214-1"
-        else:
-            target_cam = CAM
-            query_cam = CAM
+        # obj = random.choice(list(pred["masks"].keys()))
+        # if obj not in ["basketball", "steel plate_0", "instruction manual _0"]:
+        #     continue
 
-        for frame_idx in gt["masks"][obj][query_cam].keys():
-            idx = max(int(frame_idx) // 30 + 1, 0)
-            frame = cv2.imread(f"{args.datapath}/{take_id}/{target_cam}/{idx:06d}.jpg")
-            if pred["masks"][obj][CAM].get(frame_idx) is None:
+        for obj in ["basketball", "steel plate_0", "instruction manual _0"]:
+            # while len(list(pred["masks"][obj].keys())) <= 0:
+            #     obj = random.choice(list(pred["masks"].keys()))
+            if obj not in list(pred["masks"].keys()):
                 continue
-            mask = mask_utils.decode(pred["masks"][obj][CAM][frame_idx])
-            # breakpoint()
-            try:
-                mask = upsample_mask(mask, frame)
-                out = blend_mask(frame, mask)
-            except:
-                breakpoint()
-
-            os.makedirs(f"{args.out_path}/{take_id}_{target_cam}_{obj}", exist_ok=True)
-            cv2.imwrite(
-                f"{args.out_path}/{take_id}_{target_cam}_{obj}/{frame_idx}.jpg", out
-            )
-
-            # gt
-            if args.show_gt:
-                # target gt
-                if frame_idx in gt["masks"][obj][target_cam]:
-                    gt_mask = mask_utils.decode(gt["masks"][obj][target_cam][frame_idx])
+            cams = list(pred["masks"][obj].keys())
+            for CAM in cams:
+                if args.reverse:
+                    # query_cam = "_".join(CAM.split("_")[:1])
+                    # target_cam = "_".join(CAM.split("_")[1:])
+                    target_cam = CAM
+                    query_cam = "aria01_214-1"
                 else:
-                    gt_mask = np.zeros_like(frame)[..., 0]
+                    target_cam = CAM
+                    query_cam = CAM
 
-                # gt_mask = upsample_mask(gt_mask, frame)
-                gt_mask = downsample(gt_mask, frame)
-                out = blend_mask(frame, gt_mask)
+                for frame_idx in gt["masks"][obj][query_cam].keys():
+                    idx = max(int(frame_idx) // 30 + 1, 0)
+                    frame = cv2.imread(
+                        f"{args.datapath}/{take_id}/{target_cam}/{idx:06d}.jpg"
+                    )
+                    if pred["masks"][obj][CAM].get(frame_idx) is None:
+                        continue
+                    mask = mask_utils.decode(pred["masks"][obj][CAM][frame_idx])
+                    # breakpoint()
+                    try:
+                        mask = upsample_mask(mask, frame)
+                        out = blend_mask(frame, mask)
+                    except:
+                        breakpoint()
 
-                os.makedirs(
-                    f"{args.out_path}/{take_id}_{target_cam}_{obj}_gt", exist_ok=True
-                )
-                cv2.imwrite(
-                    f"{args.out_path}/{take_id}_{target_cam}_{obj}_gt/{frame_idx}.jpg",
-                    out,
-                )
+                    os.makedirs(
+                        f"{args.out_path}/{take_id}_{target_cam}_{obj}", exist_ok=True
+                    )
+                    cv2.imwrite(
+                        f"{args.out_path}/{take_id}_{target_cam}_{obj}/{frame_idx}.jpg",
+                        out,
+                    )
 
-                # query gt
-                frame = cv2.imread(
-                    f"{args.datapath}/{take_id}/{query_cam}/{idx:06d}.jpg"
-                )
-                if frame_idx in gt["masks"][obj][query_cam]:
-                    gt_mask = mask_utils.decode(gt["masks"][obj][query_cam][frame_idx])
-                else:
-                    gt_mask = np.zeros_like(frame)[..., 0]
+                    # gt
+                    if args.show_gt:
+                        # target gt
+                        if frame_idx in gt["masks"][obj][target_cam]:
+                            gt_mask = mask_utils.decode(
+                                gt["masks"][obj][target_cam][frame_idx]
+                            )
+                        else:
+                            gt_mask = np.zeros_like(frame)[..., 0]
 
-                # gt_mask = upsample_mask(gt_mask, frame)
-                gt_mask = downsample(gt_mask, frame)
-                out = blend_mask(frame, gt_mask)
+                        # gt_mask = upsample_mask(gt_mask, frame)
+                        gt_mask = downsample(gt_mask, frame)
+                        out = blend_mask(frame, gt_mask)
 
-                os.makedirs(
-                    f"{args.out_path}/{take_id}_{target_cam}_{obj}_gt_query",
-                    exist_ok=True,
-                )
-                cv2.imwrite(
-                    f"{args.out_path}/{take_id}_{target_cam}_{obj}_gt_query/{frame_idx}.jpg",
-                    out,
-                )
+                        os.makedirs(
+                            f"{args.out_path}/{take_id}_{target_cam}_{obj}_gt",
+                            exist_ok=True,
+                        )
+                        cv2.imwrite(
+                            f"{args.out_path}/{take_id}_{target_cam}_{obj}_gt/{frame_idx}.jpg",
+                            out,
+                        )
+
+                        # query gt
+                        frame = cv2.imread(
+                            f"{args.datapath}/{take_id}/{query_cam}/{idx:06d}.jpg"
+                        )
+                        if frame_idx in gt["masks"][obj][query_cam]:
+                            gt_mask = mask_utils.decode(
+                                gt["masks"][obj][query_cam][frame_idx]
+                            )
+                        else:
+                            gt_mask = np.zeros_like(frame)[..., 0]
+
+                        # gt_mask = upsample_mask(gt_mask, frame)
+                        gt_mask = downsample(gt_mask, frame)
+                        out = blend_mask(frame, gt_mask)
+
+                        os.makedirs(
+                            f"{args.out_path}/{take_id}_{target_cam}_{obj}_gt_query",
+                            exist_ok=True,
+                        )
+                        cv2.imwrite(
+                            f"{args.out_path}/{take_id}_{target_cam}_{obj}_gt_query/{frame_idx}.jpg",
+                            out,
+                        )
