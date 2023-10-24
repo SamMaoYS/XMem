@@ -109,7 +109,6 @@ class EgoExoTestDataset:
         self.data_root = data_root
         self.req_frame_list = {}
         self.vid_list = []
-        self.ego_cam_name = ego_cam_name
         takes = natsorted(os.listdir(self.data_root))
 
         splits_path = os.path.join(self.data_root, "split.json")
@@ -127,32 +126,32 @@ class EgoExoTestDataset:
             for object_name, cams in masks.items():
                 for cam_name in list(cams.keys()):
                     if "aria" in cam_name:
-                        self.ego_cam_name = cam_name
-                if cams.get(self.ego_cam_name) is None:
+                        ego_cam_name = cam_name
+                if cams.get(ego_cam_name) is None:
                     continue
 
-                ego_frames = list(cams[self.ego_cam_name].keys())
+                ego_frames = list(cams[ego_cam_name].keys())
                 for cam_name, cam_data in cams.items():
                     if not os.path.isdir(
                         os.path.join(self.data_root, take_id, cam_name)
                     ):
                         continue
                     exo_frames = list(cam_data.keys())
-                    if cam_name == self.ego_cam_name:
+                    if cam_name == ego_cam_name:
                         continue
 
                     frames = np.intersect1d(ego_frames, exo_frames)
                     if len(frames) < num_frames:
                         continue
 
-                    vid = path.join(take_id, cam_name, object_name)
+                    vid = path.join(take_id, ego_cam_name, cam_name, object_name)
                     self.req_frame_list[vid] = [None] * (len(frames) * 2)
                     for i, f in enumerate(frames):
                         self.req_frame_list[vid][2 * i + 1] = path.join(
                             cam_name, object_name, f
                         )
                         self.req_frame_list[vid][2 * i] = path.join(
-                            self.ego_cam_name, object_name, f
+                            ego_cam_name, object_name, f
                         )
                     self.vid_list.append(vid)
         self.size = size
@@ -161,14 +160,15 @@ class EgoExoTestDataset:
         for video in self.vid_list:
             tmp = video.split("/")
             take = tmp[0]
-            exo_cam_name = tmp[1]
+            ego_cam_name = tmp[1]
+            exo_cam_name = tmp[2]
             obj = tmp[-1]
             yield EgoExoVideoReader(
-                video,
+                os.path.join(take, exo_cam_name, obj),
                 path.join(self.data_root, take, exo_cam_name, obj),
                 path.join(self.data_root, take, self.ego_cam_name, obj),
                 size=self.size,
-                to_save=self.req_frame_list[video],
+                to_save=self.req_frame_list[os.path.join(take, exo_cam_name, obj)],
                 use_all_mask=False,
             )
 
