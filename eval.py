@@ -243,8 +243,8 @@ for vid_reader in progressbar(
     first_mask_loaded = False
     skip = 0
 
-    try:
-        for ti, data in enumerate(loader):
+    for ti, data in enumerate(loader):
+        try:
             with torch.cuda.amp.autocast(enabled=not args.benchmark):
                 rgb = data["rgb"].cuda()[0]
                 ego_rgb = data["ego_rgb"].cuda()[0]
@@ -320,9 +320,9 @@ for vid_reader in progressbar(
                         path.join(coco_out_path, rgb_name[:-4] + ".json"), "w+"
                     ) as fp:
                         json.dump(out_img_coco, fp)
-    except Exception as e:
-        skip += 1
-        print(f"Error processing frame {take_id}: {e}")
+        except Exception as e:
+            skip += 1
+            print(f"Error processing frame {take_id}: {e}")
         # if args.save_scores:
         #     np_path = path.join(args.output, 'Scores', vid_name)
         #     os.makedirs(np_path, exist_ok=True)
