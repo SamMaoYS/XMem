@@ -165,7 +165,7 @@ class EgoExoTestDataset:
                 path.join(self.data_root, take, exo_cam_name, obj),
                 path.join(self.data_root, take, ego_cam_name, obj),
                 size=self.size,
-                to_save=self.req_frame_list[os.path.join(take, ego_cam_name, obj)],
+                to_save=self.req_frame_list[video],
                 use_all_mask=False,
             )
 
