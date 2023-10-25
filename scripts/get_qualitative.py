@@ -92,7 +92,7 @@ if __name__ == "__main__":
     random.seed(0)
     random.shuffle(test_ids)
 
-    for take_id in tqdm.tqdm(test_ids[:30]):
+    for take_id in tqdm.tqdm(test_ids[:-1]):
         if take_id not in [
             "ac259bd8-f9a1-4456-99b3-610f80351c06",
             "e8cf53f3-a9e3-45b6-a313-10765ae183e2",
