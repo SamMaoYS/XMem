@@ -111,6 +111,10 @@ def processGTPred_EGOEXO(datapath, take_id, take_annotation, gt, pred, object_id
     ObjExist_GT = []
     ObjExist_Pred = []
 
+    ObjSizeGT = []
+    ObjSizePred = []
+    IMSize = []
+
     H, W = 480, 480  # resolution for evalution
 
     for object_id in object_ids:
@@ -216,6 +220,11 @@ def processGTPred_EGOEXO(datapath, take_id, take_annotation, gt, pred, object_id
                 ShapeAcc.append(shape_acc)
                 ExistenceAcc.append(ex_acc)
                 LocationScores.append(location_score)
+
+                ObjSizeGT.append(np.sum(gt_mask).item())
+                ObjSizePred.append(np.sum(pred_mask).item())
+                IMSize.append(list(gt_mask.shape[:2]))
+
                 ObjExist_GT.append(gt_obj_exists)
                 ObjExist_Pred.append(pred_obj_exists)
 
@@ -244,6 +253,9 @@ def processGTPred_EGOEXO(datapath, take_id, take_annotation, gt, pred, object_id
         MDistBinning.tolist(),
         ObjExist_GT,
         ObjExist_Pred,
+        ObjSizeGT,
+        ObjSizePred,
+        IMSize,
     )  # list(ego_exo), list(ego_noexo)
 
 
@@ -256,6 +268,10 @@ def processGTPred_EXOEGO(take_annotation, gt, pred, object_ids):
     MDistBinning = []
     ObjExist_GT = []
     ObjExist_Pred = []
+
+    ObjSizeGT = []
+    ObjSizePred = []
+    IMSize = []
 
     H, W = 480, 480  # resolution for evalution
 
@@ -278,7 +294,9 @@ def processGTPred_EXOEGO(take_annotation, gt, pred, object_ids):
                 gt_masks_exo = gt["masks"][object_id][exo_cam]
 
             if pred.get("masks") is None:
-                import pdb; pdb.set_trace()
+                import pdb
+
+                pdb.set_trace()
                 continue
 
             if (
@@ -348,6 +366,10 @@ def processGTPred_EXOEGO(take_annotation, gt, pred, object_ids):
                 ObjExist_GT.append(gt_obj_exists)
                 ObjExist_Pred.append(pred_obj_exists)
 
+                ObjSizeGT.append(np.sum(gt_mask).item())
+                ObjSizePred.append(np.sum(pred_mask).item())
+                IMSize.append(list(gt_mask.shape[:2]))
+
     IoUs = np.array(IoUs)
     ShapeAcc = np.array(ShapeAcc)
     ExistenceAcc = np.array(ExistenceAcc)
@@ -373,6 +395,9 @@ def processGTPred_EXOEGO(take_annotation, gt, pred, object_ids):
         MDistBinning.tolist(),
         ObjExist_GT,
         ObjExist_Pred,
+        ObjSizeGT,
+        ObjSizePred,
+        IMSize,
     )  # list(ego_exo), list(ego_noexo)
 
 
@@ -409,11 +434,15 @@ if __name__ == "__main__":
     total_location_scores = []
     total_mdistnorm_scores = []
     total_mdistbin_scores = []
+    total_obj_sizes_gt = []
+    total_obj_sizes_pred = []
+    total_img_sizes = []
 
     total_obj_exists_gt = []
     total_obj_exists_pred = []
 
     take_metrics = {}
+    take_raw = {}
 
     for take_id in tqdm.tqdm(test_ids):
         print(f"Processing take {take_id}")
@@ -438,6 +467,9 @@ if __name__ == "__main__":
                 mdistbin_scores,
                 obj_exist_gt,
                 obj_exist_pred,
+                obj_size_gt,
+                obj_size_pred,
+                img_sizes,
             ) = processGTPred_EXOEGO(annotations[take_id], gt, pred, object_ids)
         else:
             (
@@ -449,6 +481,9 @@ if __name__ == "__main__":
                 mdistbin_scores,
                 obj_exist_gt,
                 obj_exist_pred,
+                obj_size_gt,
+                obj_size_pred,
+                img_sizes,
             ) = processGTPred_EGOEXO(
                 args.datapath, take_id, annotations[take_id], gt, pred, object_ids
             )
@@ -458,6 +493,9 @@ if __name__ == "__main__":
         total_location_scores += location_scores
         total_mdistnorm_scores += mdistnorm_scores
         total_mdistbin_scores += mdistbin_scores
+        total_obj_sizes_gt += obj_size_gt
+        total_obj_sizes_pred += obj_size_pred
+        total_img_sizes += img_sizes
         total_obj_exists_gt += obj_exist_gt
         total_obj_exists_pred += obj_exist_pred
 
@@ -472,6 +510,20 @@ if __name__ == "__main__":
             "existence_balanced_acc": balanced_accuracy_score(
                 obj_exist_gt, obj_exist_pred
             ),
+        }
+
+        take_raw[take_id] = {
+            "iou": ious,
+            "shape_accs": shape_accs,
+            "existence_acc": existence_accs,
+            "location_score": location_scores,
+            "mdistnorm_score": mdistnorm_scores,
+            "mdistbin_score": mdistbin_scores,
+            "obj_exist_gt": obj_exist_gt,
+            "obj_exist_pred": obj_exist_pred,
+            "obj_size_gt": obj_size_gt,
+            "obj_size_pred": obj_size_pred,
+            "img_sizes": img_sizes,
         }
         print("\n")
 
@@ -506,6 +558,9 @@ if __name__ == "__main__":
     with open(f"{args.inference_path}/take_metrics_{EVALMODE}.json", "w") as fp:
         json.dump(take_metrics, fp)
 
+    with open(f"{args.inference_path}/take_raw_{EVALMODE}.json", "w") as fp:
+        json.dump(take_raw, fp)
+
     total_metrics = {
         "iou": total_iou,
         "shape_accs": total_shape_acc,
@@ -515,6 +570,9 @@ if __name__ == "__main__":
         "mdistbin_score": total_mdistbin_scores,
         "obj_exists_gt": total_obj_exists_gt,
         "obj_exists_pred": total_obj_exists_pred,
+        "obj_size_gt": total_obj_sizes_gt,
+        "obj_size_pred": total_obj_sizes_pred,
+        "img_sizes": total_img_sizes,
     }
 
     with open(f"{args.inference_path}/total_metrics_{EVALMODE}.json", "w") as fp:
