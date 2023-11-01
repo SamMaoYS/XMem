@@ -93,12 +93,12 @@ if __name__ == "__main__":
     random.shuffle(test_ids)
 
     for take_id in tqdm.tqdm(test_ids[:-1]):
-        if take_id not in [
-            "ac259bd8-f9a1-4456-99b3-610f80351c06",
-            "e8cf53f3-a9e3-45b6-a313-10765ae183e2",
-            "7abe1f04-6712-4325-b49d-4bb65bd30eec",
-        ]:
-            continue
+        # if take_id not in [
+        #     "ac259bd8-f9a1-4456-99b3-610f80351c06",
+        #     "e8cf53f3-a9e3-45b6-a313-10765ae183e2",
+        #     "7abe1f04-6712-4325-b49d-4bb65bd30eec",
+        # ]:
+        #     continue
         print(f"Processing take {take_id}")
         # Load the GT annotations
         gt_file = f"{args.datapath}/{take_id}/annotation.json"
@@ -116,11 +116,11 @@ if __name__ == "__main__":
         # if obj not in ["basketball", "steel plate_0", "instruction manual _0"]:
         #     continue
 
-        for obj in ["basketball", "steel plate_0", "instruction manual _0"]:
+        for obj in list(pred["masks"].keys()):
             # while len(list(pred["masks"][obj].keys())) <= 0:
             #     obj = random.choice(list(pred["masks"].keys()))
-            if obj not in list(pred["masks"].keys()):
-                continue
+            # if obj not in list(pred["masks"].keys()):
+            #     continue
             cams = list(pred["masks"][obj].keys())
             for CAM in cams:
                 if args.reverse:
