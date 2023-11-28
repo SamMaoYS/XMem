@@ -172,7 +172,7 @@ for si, stage in enumerate(stages_to_perform):
 
         return construct_loader(train_dataset)
 
-    def renew_egoexo_loader(max_skip, ego_cam_name="aria01_214-1", finetune=False):
+    def renew_egoexo_loader(max_skip, ego_cam_name="aria", finetune=False):
         train_dataset = VOSDataset(
             egoexo_root,
             ego_cam_name,

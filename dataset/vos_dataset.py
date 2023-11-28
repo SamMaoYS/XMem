@@ -40,7 +40,6 @@ class VOSDataset(Dataset):
     ):
         takes = sorted(os.listdir(egoexo_root))
         self.egoexo_root = egoexo_root
-        self.ego_cam_name = ego_cam_name
         self.frame_folder = "rgb"
         self.mask_file = "annotation.json"
         self.max_jump = max_jump
@@ -65,23 +64,25 @@ class VOSDataset(Dataset):
             masks = annotation["masks"]
 
             for object_name, cams in masks.items():
-                if cams.get(self.ego_cam_name) is None:
+                ego_cams = [x for x in cams[object_name].keys() if "aria" in x]
+                if len(ego_cams) < 1:
                     continue
-                ego_frames = list(cams[self.ego_cam_name].keys())
+                ego_cam_name = ego_cams[0]
+                ego_frames = list(cams[ego_cam_name].keys())
                 for cam_name, cam_data in cams.items():
                     if not os.path.isdir(
                         os.path.join(self.egoexo_root, take_id, cam_name)
                     ):
                         continue
                     exo_frames = list(cam_data.keys())
-                    if cam_name == self.ego_cam_name:
+                    if cam_name == ego_cam_name:
                         continue
 
                     frames = np.intersect1d(ego_frames, exo_frames)
                     if len(frames) < num_frames:
                         continue
 
-                    vid = path.join(take_id, cam_name, object_name)
+                    vid = path.join(take_id, ego_cam_name, cam_name, object_name)
                     self.frames[vid] = [None] * len(frames)
                     for i, f in enumerate(frames):
                         self.frames[vid][i] = path.join(cam_name, object_name, f)
@@ -252,7 +253,7 @@ class VOSDataset(Dataset):
         info = {}
         info["name"] = video
 
-        take_id, cam_name, object_name = video.split("/")[-3:]
+        take_id, ego_cam_name, cam_name, object_name = video.split("/")[-4:]
 
         frames = self.frames[video]
 
@@ -301,7 +302,7 @@ class VOSDataset(Dataset):
                 frames_idx,
                 os.path.join(self.egoexo_root, take_id),
                 frames,
-                self.ego_cam_name,
+                ego_cam_name,
             )
             info["frames"] = info_frames
 
