@@ -182,7 +182,7 @@ for si, stage in enumerate(stages_to_perform):
             subset=None,
             num_frames=config["num_frames"],
             finetune=finetune,
-            swap=False
+            swap=swap
         )
 
         print(f"EgoExo dataset size: {len(train_dataset)}")
@@ -244,7 +244,7 @@ for si, stage in enumerate(stages_to_perform):
         increase_skip_fraction = [0.1, 0.3, 0.9, 100]
         # VOS dataset, 480p is used for both datasets
         egoexo_root = config["egoexo_root"]
-        train_sampler, train_loader = renew_egoexo_loader(5)
+        train_sampler, train_loader = renew_egoexo_loader(5, swap=config['swap'])
         renew_loader = renew_egoexo_loader
     else:
         # stage 2 or 3
@@ -255,7 +255,7 @@ for si, stage in enumerate(stages_to_perform):
             path.expanduser(config["davis_root"]), "2017", "trainval"
         )
 
-        train_sampler, train_loader = renew_vos_loader(5, swap=config['swap'])
+        train_sampler, train_loader = renew_vos_loader(5)
         renew_loader = renew_vos_loader
 
     """
