@@ -259,7 +259,10 @@ class VOSDataset(Dataset):
             masks = []
             target_objects = []
             for f_idx in frames_idx:
-                cam_name, object_name, f_name = frames[f_idx].split("/")
+                try:
+                    cam_name, object_name, f_name = frames[f_idx].split("/")
+                except:
+                    print(frames[f_idx])
                 rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
                 rgb_name = os.path.join(self.egoexo_root, take_id, cam_name, rgb_name)
 
