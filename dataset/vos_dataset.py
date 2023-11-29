@@ -66,7 +66,7 @@ class VOSDataset(Dataset):
             masks = annotation["masks"]
 
             for object_name, cams in masks.items():
-                ego_cams = [x for x in cams[object_name].keys() if "aria" in x]
+                ego_cams = [x for x in masks[object_name].keys() if "aria" in x]
                 if len(ego_cams) < 1:
                     continue
                 ego_cam_name = ego_cams[0]
