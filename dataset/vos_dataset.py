@@ -37,6 +37,7 @@ class VOSDataset(Dataset):
         max_num_obj=1,
         finetune=False,
         augmentation=False,
+        swap=False,
     ):
         takes = sorted(os.listdir(egoexo_root))
         self.egoexo_root = egoexo_root
@@ -47,6 +48,7 @@ class VOSDataset(Dataset):
         self.num_frames = num_frames
         self.max_num_obj = max_num_obj
         self.augmentation = augmentation
+        self.swap = swap
 
         self.videos = []
         self.frames = {}
@@ -85,12 +87,20 @@ class VOSDataset(Dataset):
                     vid = path.join(take_id, cam_name, object_name)
                     self.frames[vid] = [None] * (len(frames) * 2)
                     for i, f in enumerate(frames):
-                        self.frames[vid][2 * i + 1] = path.join(
-                            cam_name, object_name, f
-                        )
-                        self.frames[vid][2 * i] = path.join(
-                            ego_cam_name, object_name, f
-                        )
+                        if not self.swap:
+                            self.frames[vid][2 * i + 1] = path.join(
+                                cam_name, object_name, f
+                            )
+                            self.frames[vid][2 * i] = path.join(
+                                ego_cam_name, object_name, f
+                            )
+                        else:
+                            self.frames[vid][2 * i] = path.join(
+                                cam_name, object_name, f
+                            )
+                            self.frames[vid][2 * i + 1] = path.join(
+                                ego_cam_name, object_name, f
+                            )
                     self.videos.append(vid)
 
         print(
