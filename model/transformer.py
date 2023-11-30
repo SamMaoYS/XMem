@@ -403,7 +403,6 @@ class Encoder(nn.Module):
 
         # self.final_linear = nn.Conv2d(d_model, 3, kernel_size=1)
         self.decoder = Decoder(d_model, 3)
-        self.cls_branch = ClsBranch(in_dim=256)
         self.sigmoid = nn.Sigmoid()
         self.eps = 1e-7
 
@@ -431,7 +430,7 @@ class Encoder(nn.Module):
                 featx, featy, featmask, x_mask, y_mask
             )
 
-        out_cls = self.cls_branch(featy)
+        # out_cls = self.cls_branch(featy)
         outx = self.sigmoid(self.decoder(featx))
         outy = self.sigmoid(self.decoder(featy))
 
@@ -441,7 +440,7 @@ class Encoder(nn.Module):
         outx = torch.clamp(outx, min=self.eps, max=1 - self.eps)
         outy = torch.clamp(outy, min=self.eps, max=1 - self.eps)
 
-        return outx, outy, featx, featy, out_cls
+        return outx, outy, featx, featy
 
 
 ### --- Transformer Encoder --- ###
@@ -509,9 +508,9 @@ class TransEncoder(nn.Module):
         input y: B, C, H, W
 
         """
-        outx, outy, featx, featy, out_cls = self.net(x, y, fmask, x_mask, y_mask)
+        outx, outy, featx, featy = self.net(x, y, fmask, x_mask, y_mask)
 
-        return outx, outy, featx, featy, out_cls
+        return outx, outy, featx, featy
 
 
 if __name__ == "__main__":

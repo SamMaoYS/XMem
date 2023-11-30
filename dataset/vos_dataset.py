@@ -84,7 +84,9 @@ class VOSDataset(Dataset):
                     if len(frames) < num_frames:
                         continue
 
-                    vid = path.join(take_id, ego_cam_name, cam_name, object_name.replace('/', '-'))
+                    vid = path.join(
+                        take_id, ego_cam_name, cam_name, object_name.replace("/", "-")
+                    )
                     self.frames[vid] = [None] * len(frames)
                     for i, f in enumerate(frames):
                         self.frames[vid][i] = path.join(cam_name, object_name, f)
@@ -200,7 +202,7 @@ class VOSDataset(Dataset):
         sequence_seed = np.random.randint(2147483647)
         for f_idx in frames_idx:
             components = frames[f_idx].split("/")
-            object_name = '/'.join(components[1:-1])
+            object_name = "/".join(components[1:-1])
             f_name = components[-1]
             rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
             # rgb_path = os.path.join(self.egoexo_root, take_id, cam_name, rgb_name)
