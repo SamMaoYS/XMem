@@ -12,7 +12,7 @@ class Configuration:
         # Enable torch.backends.cudnn.benchmark -- Faster in some cases, test in your own environment
         parser.add_argument("--benchmark", action="store_true")
         parser.add_argument("--no_amp", action="store_true")
-
+        parser.add_argument('--swap', action='store_true', default=False)
         parser.add_argument(
             "--segswap_model",
             type=str,

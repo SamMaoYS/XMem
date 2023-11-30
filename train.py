@@ -172,7 +172,7 @@ for si, stage in enumerate(stages_to_perform):
 
         return construct_loader(train_dataset)
 
-    def renew_egoexo_loader(max_skip, ego_cam_name="aria", finetune=False):
+    def renew_egoexo_loader(max_skip, ego_cam_name="aria", finetune=False, swap=False):
         train_dataset = VOSDataset(
             egoexo_root,
             ego_cam_name,
@@ -181,6 +181,7 @@ for si, stage in enumerate(stages_to_perform):
             subset=None,
             num_frames=config["num_frames"],
             finetune=finetune,
+            swap=swap
         )
 
         print(f"EgoExo dataset size: {len(train_dataset)}")
@@ -242,7 +243,7 @@ for si, stage in enumerate(stages_to_perform):
         increase_skip_fraction = [0.1, 0.3, 0.9, 100]
         # VOS dataset, 480p is used for both datasets
         egoexo_root = config["egoexo_root"]
-        train_sampler, train_loader = renew_egoexo_loader(5)
+        train_sampler, train_loader = renew_egoexo_loader(5, swap=config['swap'])
         renew_loader = renew_egoexo_loader
     else:
         # stage 2 or 3
@@ -294,7 +295,7 @@ for si, stage in enumerate(stages_to_perform):
                         max_skip_values = max_skip_values[1:]
                         change_skip_iter = change_skip_iter[1:]
                     print(f"Changing skip to {cur_skip=}")
-                    train_sampler, train_loader = renew_loader(cur_skip)
+                    train_sampler, train_loader = renew_loader(cur_skip, swap=config['swap'])
                     break
 
                 # fine-tune means fewer augmentations to train the sensory memory
@@ -303,7 +304,7 @@ for si, stage in enumerate(stages_to_perform):
                     and not finetuning
                     and total_iter >= config["iterations"]
                 ):
-                    train_sampler, train_loader = renew_loader(cur_skip, finetune=True)
+                    train_sampler, train_loader = renew_loader(cur_skip, finetune=True, swap=config['swap'])
                     finetuning = True
                     model.save_network_interval = 1000
                     break

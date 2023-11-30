@@ -37,6 +37,7 @@ class VOSDataset(Dataset):
         max_num_obj=1,
         finetune=False,
         augmentation=False,
+        swap=False,
     ):
         takes = sorted(os.listdir(egoexo_root))
         self.egoexo_root = egoexo_root
@@ -47,6 +48,7 @@ class VOSDataset(Dataset):
         self.num_frames = num_frames
         self.max_num_obj = max_num_obj
         self.augmentation = augmentation
+        self.swap = swap
 
         self.videos = []
         self.frames = {}
@@ -64,7 +66,7 @@ class VOSDataset(Dataset):
             masks = annotation["masks"]
 
             for object_name, cams in masks.items():
-                ego_cams = [x for x in cams[object_name].keys() if "aria" in x]
+                ego_cams = [x for x in masks[object_name].keys() if "aria" in x]
                 if len(ego_cams) < 1:
                     continue
                 ego_cam_name = ego_cams[0]
@@ -82,7 +84,7 @@ class VOSDataset(Dataset):
                     if len(frames) < num_frames:
                         continue
 
-                    vid = path.join(take_id, ego_cam_name, cam_name, object_name)
+                    vid = path.join(take_id, ego_cam_name, cam_name, object_name.replace('/', '-'))
                     self.frames[vid] = [None] * len(frames)
                     for i, f in enumerate(frames):
                         self.frames[vid][i] = path.join(cam_name, object_name, f)
@@ -197,7 +199,9 @@ class VOSDataset(Dataset):
         masks = []
         sequence_seed = np.random.randint(2147483647)
         for f_idx in frames_idx:
-            _, object_name, f_name = frames[f_idx].split("/")
+            components = frames[f_idx].split("/")
+            object_name = '/'.join(components[1:-1])
+            f_name = components[-1]
             rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
             # rgb_path = os.path.join(self.egoexo_root, take_id, cam_name, rgb_name)
             rgb_path = os.path.join(take_root, cam_name, rgb_name)
@@ -357,16 +361,28 @@ class VOSDataset(Dataset):
         ]
         selector = torch.FloatTensor(selector)
 
-        data = {
-            "rgb": images,
-            "first_frame_gt": first_frame_gt,
-            "cls_gt": cls_gt,
-            "ego_rgb": ego_images,
-            "ego_first_frame_gt": ego_first_frame_gt,
-            "ego_cls_gt": ego_cls_gt,
-            "selector": selector,
-            "info": info,
-        }
+        if not self.swap:
+            data = {
+                "rgb": images,
+                "first_frame_gt": first_frame_gt,
+                "cls_gt": cls_gt,
+                "ego_rgb": ego_images,
+                "ego_first_frame_gt": ego_first_frame_gt,
+                "ego_cls_gt": ego_cls_gt,
+                "selector": selector,
+                "info": info,
+            }
+        else:
+            data = {
+                "ego_rgb": images,
+                "ego_first_frame_gt": first_frame_gt,
+                "ego_cls_gt": cls_gt,
+                "rgb": ego_images,
+                "first_frame_gt": ego_first_frame_gt,
+                "cls_gt": ego_cls_gt,
+                "selector": selector,
+                "info": info,
+            }
 
         return data
 
