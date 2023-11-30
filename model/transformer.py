@@ -341,6 +341,26 @@ class Decoder(nn.Module):
         return x
 
 
+class ClsBranch(nn.Module):
+    # branch to predict if the object exists or not.
+    def __init__(self, in_dim):
+        super(ClsBranch, self).__init__()
+
+        self.conv = nn.Conv2d(in_dim, 1, 3)
+        self.relu = nn.ReLU()
+
+        self.mlp = nn.Sequential(
+            *[nn.Linear(28 * 28, 32), nn.ReLU(), nn.Linear(32, 1), nn.Sigmoid()]
+        )
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.relu(x)
+        x = torch.flatten(x, start_dim=1)
+        x = self.mlp(x)
+        return x
+
+
 class Encoder(nn.Module):
     """
     Transformer encoder with all paramters
@@ -383,6 +403,7 @@ class Encoder(nn.Module):
 
         # self.final_linear = nn.Conv2d(d_model, 3, kernel_size=1)
         self.decoder = Decoder(d_model, 3)
+        self.cls_branch = ClsBranch(in_dim=256)
         self.sigmoid = nn.Sigmoid()
         self.eps = 1e-7
 
@@ -410,6 +431,7 @@ class Encoder(nn.Module):
                 featx, featy, featmask, x_mask, y_mask
             )
 
+        out_cls = self.cls_branch(featy)
         outx = self.sigmoid(self.decoder(featx))
         outy = self.sigmoid(self.decoder(featy))
 
@@ -419,7 +441,7 @@ class Encoder(nn.Module):
         outx = torch.clamp(outx, min=self.eps, max=1 - self.eps)
         outy = torch.clamp(outy, min=self.eps, max=1 - self.eps)
 
-        return outx, outy, featx, featy
+        return outx, outy, featx, featy, out_cls
 
 
 ### --- Transformer Encoder --- ###
@@ -487,9 +509,9 @@ class TransEncoder(nn.Module):
         input y: B, C, H, W
 
         """
-        outx, outy, featx, featy = self.net(x, y, fmask, x_mask, y_mask)
+        outx, outy, featx, featy, out_cls = self.net(x, y, fmask, x_mask, y_mask)
 
-        return outx, outy, featx, featy
+        return outx, outy, featx, featy, out_cls
 
 
 if __name__ == "__main__":

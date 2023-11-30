@@ -120,11 +120,11 @@ def forward_pass(backbone, netEncoder, tensor1, tensor2, tensor3):
 
     # RX = torch.BoolTensor((1, 1, 30, 30)).fill_(False)
     # RY = torch.BoolTensor((1, 1, 30, 30)).fill_(False)
-    out1, out2, featx, featy = netEncoder(feat1, feat2, fmask)  ## predictions
+    out1, out2, featx, featy, out_cls = netEncoder(feat1, feat2, fmask)  ## predictions
 
     # visualize(tensor1, tensor2, tensor3, tensor4)
 
-    return out1.narrow(1, 2, 1), out2.narrow(1, 2, 1), featx, featy
+    return out1.narrow(1, 2, 1), out2.narrow(1, 2, 1), featx, featy, out_cls
 
 
 def visualize(tensor1, tensor2, tensor3, tensor4):
