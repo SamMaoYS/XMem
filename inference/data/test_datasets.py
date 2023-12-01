@@ -144,6 +144,8 @@ class EgoExoTestDataset:
                     if len(frames) < num_frames:
                         continue
 
+                    assert "/" not in take_id
+
                     vid = path.join(take_id, ego_cam_name, cam_name, object_name)
                     self.req_frame_list[vid] = [None] * len(frames)
                     for i, f in enumerate(frames):
@@ -159,7 +161,7 @@ class EgoExoTestDataset:
             take = tmp[0]
             ego_cam_name = tmp[1]
             exo_cam_name = tmp[2]
-            obj = tmp[-1]
+            obj = "/".join(tmp[3:])
             yield EgoExoVideoReader(
                 os.path.join(take, exo_cam_name, obj),
                 path.join(self.data_root, take, ego_cam_name, obj),
