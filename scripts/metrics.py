@@ -291,8 +291,12 @@ def getMidDistNorm(gt_mask, pred_mask):
     return mdist / np.sqrt(H**2 + W**2)
 
 
-def getMidBinning(gt_mask, pred_mask, bin_size=5):
+def getMidBinning(gt_mask, pred_mask, bin_proportion=5):
     H, W = gt_mask.shape
+    num_bins = 100 / bin_proportion
+    bin_size_x = W / num_bins
+    bin_size_y = H / num_bins
+
     gt_contours, _ = cv2.findContours(
         gt_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE
     )
@@ -310,10 +314,12 @@ def getMidBinning(gt_mask, pred_mask, bin_size=5):
     pred_mid = pred_bigc.mean(axis=0)[0]
 
     # TODO: confirm x, y correspond to widht and height
-    gt_x, gt_y = gt_mid.round()
-    pred_x, pred_y = pred_mid.round()
+    gt_x, gt_y = gt_mid
+    pred_x, pred_y = pred_mid
 
-    gt_bin_x, gt_bin_y = gt_x // bin_size, gt_y // bin_size
-    pred_bin_x, pred_bin_y = pred_x // bin_size, pred_y // bin_size
+    gt_bin_x, gt_bin_y = np.floor(gt_x / bin_size_x), np.floor(gt_y / bin_size_y)
+    pred_bin_x, pred_bin_y = np.floor(pred_x / bin_size_x), np.floor(
+        pred_y / bin_size_y
+    )
 
     return (gt_bin_x == pred_bin_x) and (gt_bin_y == pred_bin_y)
