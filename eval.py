@@ -320,7 +320,10 @@ for vid_reader in progressbar(
                     this_out_path = path.join(out_path, vid_name)
                     out_mask = mapper.remap_index_mask(out_mask)
 
-                    cam_name, object_name, f_name = frame.split("/")
+                    tmp = frame.split("/")
+                    cam_name = tmp[0]
+                    object_name = "/".join(tmp[1:-1])
+                    f_name = tmp[-1]
                     rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
 
                     out_img_coco = mask_utils.encode(

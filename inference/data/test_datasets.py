@@ -163,7 +163,7 @@ class EgoExoTestDataset:
             take = tmp[0]
             ego_cam_name = tmp[1]
             exo_cam_name = tmp[2]
-            obj = tmp[-1]
+            obj = "/".join(tmp[3:])
             video_name = os.path.join(take, exo_cam_name, obj)
             yield EgoExoVideoReader(
                 video_name,

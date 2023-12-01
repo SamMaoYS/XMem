@@ -150,9 +150,10 @@ class EgoExoVideoReader(Dataset):
         self.use_all_mask = use_all_mask
         self.frames = to_save
 
-        self.take_id, self.exo_cam_name, self.object_name = exo_image_dir.split("/")[
-            -3:
-        ]
+        tmp = exo_image_dir.split("/")
+        self.take_id = tmp[0]
+        self.exo_cam_name = tmp[1]
+        self.object_name = "/".join(tmp[2:])
         self.data_root = exo_image_dir.split(self.take_id)[0]
         self.ego_cam_name = ego_image_dir.split("/")[-2]
 
@@ -199,7 +200,10 @@ class EgoExoVideoReader(Dataset):
         info = {}
         data = {}
 
-        cam_name, object_name, f_name = frame.split("/")
+        tmp = frame.split("/")
+        cam_name = tmp[0]
+        object_name = "/".join(tmp[1:-1])
+        f_name = tmp[-1]
         assert self.object_name == object_name, AssertionError("Object name mismatch")
         rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
         im_path = os.path.join(self.data_root, self.take_id, cam_name, rgb_name)
