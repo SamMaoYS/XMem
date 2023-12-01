@@ -129,6 +129,7 @@ class EgoExoVideoReader(Dataset):
 
     def __init__(
         self,
+        data_root,
         vid_name,
         ego_image_dir,
         exo_image_dir,
@@ -154,7 +155,7 @@ class EgoExoVideoReader(Dataset):
         self.take_id = tmp[0]
         self.exo_cam_name = tmp[1]
         self.object_name = "/".join(tmp[2:])
-        self.data_root = exo_image_dir.split(self.take_id)[0]
+        self.data_root = data_root
         self.ego_cam_name = ego_image_dir.split("/")[-2]
 
         f_name = self.frames[0].split("/")[-1]

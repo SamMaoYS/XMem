@@ -167,6 +167,7 @@ class EgoExoTestDataset:
             obj = "/".join(tmp[3:])
             video_name = os.path.join(take, exo_cam_name, obj)
             yield EgoExoVideoReader(
+                self.data_root,
                 video_name,
                 path.join(take, ego_cam_name, obj),
                 path.join(take, exo_cam_name, obj),
