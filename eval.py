@@ -254,7 +254,10 @@ for vid_reader in progressbar(
                 need_resize = info["need_resize"][0]
 
                 this_out_path = path.join(out_path, vid_name)
-                cam_name, object_name, f_name = frame.split("/")
+                tmp = frame.split("/")
+                cam_name = tmp[0]
+                object_name = "/".join(tmp[1:-1])
+                f_name = tmp[-1]
                 rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
                 coco_out_path = path.join(out_path, "coco", vid_name)
                 # if path.isfile(path.join(coco_out_path, rgb_name[:-4] + ".json")):
