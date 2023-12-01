@@ -472,6 +472,9 @@ if __name__ == "__main__":
                 img_sizes,
             ) = processGTPred_EXOEGO(annotations[take_id], gt, pred, object_ids)
         else:
+            import pdb
+
+            pdb.set_trace()
             (
                 ious,
                 shape_accs,
