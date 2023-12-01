@@ -117,10 +117,10 @@ class EgoExoTestDataset:
         val_split = split_data[split]
         self.takes = [take_id for take_id in val_split if take_id in takes]
         print(len(takes))
+        print(takes)
 
         for take_id in self.takes:
             annotation_path = os.path.join(self.data_root, take_id, "annotation.json")
-            print(take_id)
             with open(annotation_path, "r") as fp:
                 annotation = json.load(fp)
             masks = annotation["masks"]
