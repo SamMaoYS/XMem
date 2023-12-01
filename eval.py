@@ -33,7 +33,7 @@ Arguments loading
 """
 parser = ArgumentParser()
 parser.add_argument("--model", default="./saves/XMem.pth")
-
+parser.add_argument("--swap", action="store_true", default=False)
 # Data options
 parser.add_argument("--d16_path", default="../DAVIS/2016")
 parser.add_argument("--d17_path", default="../DAVIS/2017")
@@ -150,11 +150,19 @@ if is_egoexo:
 
         if args.split == "val":
             meta_dataset = EgoExoTestDataset(
-                data_root=egoexo_path, split="val", size=args.size, num_frames=5
+                data_root=egoexo_path,
+                split="val",
+                size=args.size,
+                num_frames=5,
+                swap=args.swap,
             )
         elif args.split == "test":
             meta_dataset = EgoExoTestDataset(
-                data_root=egoexo_path, split="test", size=args.size, num_frames=5
+                data_root=egoexo_path,
+                split="test",
+                size=args.size,
+                num_frames=5,
+                swap=args.swap,
             )
         else:
             raise NotImplementedError

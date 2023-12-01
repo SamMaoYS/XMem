@@ -104,7 +104,13 @@ class YouTubeVOSTestDataset:
 
 class EgoExoTestDataset:
     def __init__(
-        self, data_root, split, size=480, ego_cam_name="aria01_214-1", num_frames=8
+        self,
+        data_root,
+        split,
+        size=480,
+        ego_cam_name="aria01_214-1",
+        num_frames=8,
+        swap=False,
     ):
         self.data_root = data_root
         self.req_frame_list = {}
@@ -150,12 +156,20 @@ class EgoExoTestDataset:
                     vid = path.join(take_id, ego_cam_name, cam_name, object_name)
                     self.req_frame_list[vid] = [None] * (len(frames) * 2)
                     for i, f in enumerate(frames):
-                        self.req_frame_list[vid][2 * i] = path.join(
-                            ego_cam_name, object_name, f
-                        )
-                        self.req_frame_list[vid][2 * i + 1] = path.join(
-                            cam_name, object_name, f
-                        )
+                        if not swap:
+                            self.req_frame_list[vid][2 * i] = path.join(
+                                ego_cam_name, object_name, f
+                            )
+                            self.req_frame_list[vid][2 * i + 1] = path.join(
+                                cam_name, object_name, f
+                            )
+                        else:
+                            self.req_frame_list[vid][2 * i + 1] = path.join(
+                                ego_cam_name, object_name, f
+                            )
+                            self.req_frame_list[vid][2 * i] = path.join(
+                                cam_name, object_name, f
+                            )
                     self.vid_list.append(vid)
         self.size = size
 
