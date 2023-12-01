@@ -427,6 +427,7 @@ if __name__ == "__main__":
     annotations_file = f"{args.datapath}/relations_objects_latest.json"
     with open(annotations_file, "r") as fp:
         annotations = json.load(fp)
+    annotations = annotations["annotations"]
 
     total_iou = []
     total_shape_acc = []
@@ -472,9 +473,6 @@ if __name__ == "__main__":
                 img_sizes,
             ) = processGTPred_EXOEGO(annotations[take_id], gt, pred, object_ids)
         else:
-            import pdb
-
-            pdb.set_trace()
             (
                 ious,
                 shape_accs,
