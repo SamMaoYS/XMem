@@ -104,7 +104,7 @@ class YouTubeVOSTestDataset:
 
 class EgoExoTestDataset:
     def __init__(
-        self, data_root, split, size=480, ego_cam_name="aria01_214-1", num_frames=8
+        self, data_root, split, size=480, ego_cam_name="aria01_214-1", num_frames=8,swap=False,
     ):
         self.data_root = data_root
         self.req_frame_list = {}
@@ -146,12 +146,20 @@ class EgoExoTestDataset:
 
                     assert "/" not in take_id
 
-                    vid = path.join(take_id, ego_cam_name, cam_name, object_name)
-                    self.req_frame_list[vid] = [None] * len(frames)
-                    for i, f in enumerate(frames):
-                        self.req_frame_list[vid][i] = path.join(
-                            cam_name, object_name, f
-                        )
+                    if swap:
+                        vid = path.join(take_id, cam_name, ego_cam_name, object_name)
+                        self.req_frame_list[vid] = [None] * len(frames)
+                        for i, f in enumerate(frames):
+                            self.req_frame_list[vid][i] = path.join(
+                                ego_cam_name, object_name, f
+                            )
+                    else:
+                        vid = path.join(take_id, ego_cam_name, cam_name, object_name)
+                        self.req_frame_list[vid] = [None] * len(frames)
+                        for i, f in enumerate(frames):
+                            self.req_frame_list[vid][i] = path.join(
+                                cam_name, object_name, f
+                            )
                     self.vid_list.append(vid)
         self.size = size
 
