@@ -160,17 +160,7 @@ for vid_reader in progressbar(
     loader = DataLoader(vid_reader, batch_size=1, shuffle=False, num_workers=0)
     vid_name = vid_reader.vid_name
     vid_length = len(loader)
-    # no need to count usage for LT if the video is not that long anyway
-    config["enable_long_term_count_usage"] = (
-        config["enable_long_term"]
-        and (
-            vid_length
-            / (config["max_mid_term_frames"] - config["min_mid_term_frames"])
-            * config["num_prototypes"]
-        )
-        >= config["max_long_term_elements"]
-    )
-
+    config["enable_long_term_count_usage"] = True
     mapper = MaskMapper()
     processor = InferenceCore(network, config=config)
     first_mask_loaded = False
