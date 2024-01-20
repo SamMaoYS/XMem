@@ -17,46 +17,40 @@ def main(args):
 
     takes = [take_id for take_id in split_data[args.split]]
     for take_id in tqdm(takes):
+        if not os.path.isdir(os.path.join(args.input, take_id)):
+            continue
+
         result = process_take(take_id, args.input, args.pred)
 
-        if not os.path.isdir(os.path.join(args.pred, take_id)):
-            result = {}
-            os.makedirs(os.path.join(args.pred, take_id))
-
-        with open(
-            os.path.join(args.pred, take_id, "pred_annotations.json"), "w+"
-        ) as fp:
+        with open(os.path.join(args.pred, take_id, "annotations.json"), "w+") as fp:
             json.dump(result, fp)
+
+
+def get_folders(path):
+    return [f for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))]
 
 
 def process_take(take_id, input, pred):
     annotation_path = os.path.join(input, take_id, "annotation.json")
     with open(annotation_path, "r") as fp:
         annotation = json.load(fp)
-    masks = annotation["masks"]
+    subsample_idx = annotation["subsample_idx"]
 
     pred_masks = {}
-    for object_name, cams in masks.items():
-        pred_masks[object_name] = {}
-        for cam_name, cam_data in cams.items():
-            if not os.path.isdir(os.path.join(input, take_id, cam_name)):
-                continue
-
-            pred_masks[object_name][cam_name] = {}
-
-            frames = list(cam_data.keys())
-            for f_name in frames:
+    cam_names = get_folders(os.path.join(pred, take_id))
+    for cams_str in cam_names:
+        for object_name in get_folders(os.path.join(pred, take_id, cams_str)):
+            pred_masks[object_name] = {}
+            pred_masks[object_name][cams_str] = {}
+            for f_name in subsample_idx:
                 f_str = "{:06d}".format(int(int(f_name) / 30 + 1))
 
                 pred_mask_path = os.path.join(
-                    pred, take_id, cam_name, object_name, f_str + ".json"
+                    pred, take_id, cams_str, object_name, f_str + ".json"
                 )
-                if not os.path.isfile(pred_mask_path):
-                    continue
-
                 with open(pred_mask_path, "r") as fp:
                     pred_mask_data = json.load(fp)
-                pred_masks[object_name][cam_name][f_name] = pred_mask_data
+                pred_masks[object_name][cams_str][f_name] = pred_mask_data
     return {"masks": pred_masks}
 
 

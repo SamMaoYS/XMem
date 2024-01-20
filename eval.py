@@ -10,9 +10,6 @@ import numpy as np
 from PIL import Image
 import json
 from inference.data.test_datasets import (
-    LongTestDataset,
-    DAVISTestDataset,
-    YouTubeVOSTestDataset,
     EgoExoTestDataset,
 )
 from inference.data.mask_mapper import MaskMapper
@@ -36,16 +33,11 @@ parser.add_argument("--model", default="./saves/XMem.pth")
 parser.add_argument("--swap", action="store_true", default=False)
 
 # Data options
-parser.add_argument("--d16_path", default="../DAVIS/2016")
-parser.add_argument("--d17_path", default="../DAVIS/2017")
-parser.add_argument("--y18_path", default="../YouTube2018")
-parser.add_argument("--y19_path", default="../YouTube")
 parser.add_argument("--e23_path", default="../data/correspondence/val")
-parser.add_argument("--lv_path", default="../long_video_set")
 # For generic (G) evaluation, point to a folder that contains "JPEGImages" and "Annotations"
 parser.add_argument("--generic_path")
 
-parser.add_argument("--dataset", help="D16/D17/Y18/Y19/LV1/LV3/G/E23", default="E23")
+parser.add_argument("--dataset", help="E23", default="E23")
 parser.add_argument("--split", help="val/test", default="val")
 parser.add_argument("--output", default=None)
 parser.add_argument(
@@ -117,33 +109,8 @@ if args.output is None:
 """
 Data preparation
 """
-is_youtube = args.dataset.startswith("Y")
-is_davis = args.dataset.startswith("D")
-is_lv = args.dataset.startswith("LV")
 is_egoexo = args.dataset.startswith("E")
-
-if is_youtube or args.save_scores:
-    out_path = path.join(args.output, "Annotations")
-else:
-    out_path = args.output
-
-if is_youtube:
-    if args.dataset == "Y18":
-        yv_path = args.y18_path
-    elif args.dataset == "Y19":
-        yv_path = args.y19_path
-
-    if args.split == "val":
-        args.split = "valid"
-        meta_dataset = YouTubeVOSTestDataset(
-            data_root=yv_path, split="valid", size=args.size
-        )
-    elif args.split == "test":
-        meta_dataset = YouTubeVOSTestDataset(
-            data_root=yv_path, split="test", size=args.size
-        )
-    else:
-        raise NotImplementedError
+out_path = args.output
 
 if is_egoexo:
     if args.dataset == "E23":
@@ -151,57 +118,22 @@ if is_egoexo:
 
         if args.split == "val":
             meta_dataset = EgoExoTestDataset(
-                data_root=egoexo_path, split="val", size=args.size, num_frames=5,swap=args.swap,
+                data_root=egoexo_path,
+                split="val",
+                size=args.size,
+                num_frames=5,
+                swap=args.swap,
             )
         elif args.split == "test":
             meta_dataset = EgoExoTestDataset(
-                data_root=egoexo_path, split="test", size=args.size, num_frames=5,swap=args.swap,
+                data_root=egoexo_path,
+                split="test",
+                size=args.size,
+                num_frames=5,
+                swap=args.swap,
             )
         else:
             raise NotImplementedError
-
-elif is_davis:
-    if args.dataset == "D16":
-        if args.split == "val":
-            # Set up Dataset, a small hack to use the image set in the 2017 folder because the 2016 one is of a different format
-            meta_dataset = DAVISTestDataset(
-                args.d16_path,
-                imset="../../2017/trainval/ImageSets/2016/val.txt",
-                size=args.size,
-            )
-        else:
-            raise NotImplementedError
-        palette = None
-    elif args.dataset == "D17":
-        if args.split == "val":
-            meta_dataset = DAVISTestDataset(
-                path.join(args.d17_path, "trainval"),
-                imset="2017/val.txt",
-                size=args.size,
-            )
-        elif args.split == "test":
-            meta_dataset = DAVISTestDataset(
-                path.join(args.d17_path, "test-dev"),
-                imset="2017/test-dev.txt",
-                size=args.size,
-            )
-        else:
-            raise NotImplementedError
-
-elif is_lv:
-    if args.dataset == "LV1":
-        meta_dataset = LongTestDataset(path.join(args.lv_path, "long_video"))
-    elif args.dataset == "LV3":
-        meta_dataset = LongTestDataset(path.join(args.lv_path, "long_video_x3"))
-    else:
-        raise NotImplementedError
-elif args.dataset == "G":
-    meta_dataset = LongTestDataset(path.join(args.generic_path), size=args.size)
-    if not args.save_all:
-        args.save_all = True
-        print("save_all is forced to be true in generic evaluation mode.")
-else:
-    raise NotImplementedError
 
 torch.autograd.set_grad_enabled(False)
 
@@ -242,114 +174,95 @@ for vid_reader in progressbar(
     mapper = MaskMapper()
     processor = InferenceCore(network, config=config)
     first_mask_loaded = False
-    skip = 0
 
     for ti, data in enumerate(loader):
-        try:
-            with torch.cuda.amp.autocast(enabled=not args.benchmark):
-                rgb = data["rgb"].cuda()[0]
-                ego_rgb = data["ego_rgb"].cuda()[0]
-                msk = data["mask"]
-                info = data["info"]
-                frame = info["frame"][0]
-                take_id = info["take_id"][0]
-                shape = info["shape"]
-                need_resize = info["need_resize"][0]
+        with torch.cuda.amp.autocast(enabled=not args.benchmark):
+            rgb = data["rgb"].cuda()[0]
+            ref_rgb = data["ref_rgb"].cuda()[0]
+            msk = data["mask"]
+            info = data["info"]
+            frame = info["frame"][0]
+            ref_frame = info["ref_frame"][0]
+            take_id = info["take_id"][0]
+            shape = info["shape"]
+            need_resize = info["need_resize"][0]
 
-                """
-                For timing see https://discuss.pytorch.org/t/how-to-measure-time-in-pytorch/26964
-                Seems to be very similar in testing as my previous timing method 
-                with two cuda sync + time.time() in STCN though 
-                """
-                start = torch.cuda.Event(enable_timing=True)
-                end = torch.cuda.Event(enable_timing=True)
-                start.record()
+            """
+            For timing see https://discuss.pytorch.org/t/how-to-measure-time-in-pytorch/26964
+            Seems to be very similar in testing as my previous timing method 
+            with two cuda sync + time.time() in STCN though 
+            """
+            start = torch.cuda.Event(enable_timing=True)
+            end = torch.cuda.Event(enable_timing=True)
+            start.record()
 
-                if args.flip:
-                    rgb = torch.flip(rgb, dims=[-1])
-                    msk = torch.flip(msk, dims=[-1]) if msk is not None else None
+            if args.flip:
+                rgb = torch.flip(rgb, dims=[-1])
+                msk = torch.flip(msk, dims=[-1]) if msk is not None else None
 
-                # Map possibly non-continuous labels to continuous ones
+            # Map possibly non-continuous labels to continuous ones
+            msk, labels = mapper.convert_mask(msk[0].numpy(), True)
+            msk = torch.Tensor(msk).cuda()
+            if need_resize:
+                msk = vid_reader.resize_mask(msk.unsqueeze(0))[0]
+            processor.set_all_labels(list(mapper.remappings.values()))
 
-                msk, labels = mapper.convert_mask(msk[0].numpy(), True)
-                msk = torch.Tensor(msk).cuda()
-                if need_resize:
-                    msk = vid_reader.resize_mask(msk.unsqueeze(0))[0]
-                processor.set_all_labels(list(mapper.remappings.values()))
+            # Run the model on this frame
+            prob = processor.step(rgb, ref_rgb, msk, labels, end=(ti == vid_length - 1))
 
-                # Run the model on this frame
-                prob = processor.step(
-                    rgb, ego_rgb, msk, labels, end=(ti == vid_length - 1)
+            # Upsample to original size if needed
+            if need_resize:
+                prob = F.interpolate(
+                    prob.unsqueeze(1), shape, mode="bilinear", align_corners=False
+                )[:, 0]
+
+            end.record()
+            torch.cuda.synchronize()
+            total_process_time += start.elapsed_time(end) / 1000
+            total_frames += 1
+
+            if args.flip:
+                prob = torch.flip(prob, dims=[-1])
+
+            # Probability mask -> index mask
+            out_mask = torch.max(prob, dim=0).indices
+            out_mask = (out_mask.detach().cpu().numpy()).astype(np.uint8)
+
+            if args.save_scores:
+                prob = (prob.detach().cpu().numpy() * 255).astype(np.uint8)
+
+            # Save the mask
+            if args.save_all or info["save"][0]:
+                object_name = vid_reader.object_name
+                take_id = vid_reader.take_id
+                ref_cam_name = vid_reader.ref_cam_name
+                pred_cam_name = vid_reader.pred_cam_name
+
+                pred_folder_name = path.join(
+                    take_id,
+                    "__".join(
+                        [ref_cam_name, pred_cam_name],
+                    ),
+                    object_name,
                 )
+                out_mask = mapper.remap_index_mask(out_mask)
 
-                # Upsample to original size if needed
-                if need_resize:
-                    prob = F.interpolate(
-                        prob.unsqueeze(1), shape, mode="bilinear", align_corners=False
-                    )[:, 0]
+                tmp = frame.split("/")
+                f_name = tmp[-1]
+                rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
 
-                end.record()
-                torch.cuda.synchronize()
-                total_process_time += start.elapsed_time(end) / 1000
-                total_frames += 1
+                out_img_coco = mask_utils.encode(
+                    np.asfortranarray((out_mask // 255).astype(np.uint8))
+                )
+                out_img_coco["counts"] = out_img_coco["counts"].decode("utf-8")
+                coco_out_path = path.join(out_path, "coco", pred_folder_name)
+                os.makedirs(coco_out_path, exist_ok=True)
+                with open(
+                    path.join(coco_out_path, rgb_name[:-4] + ".json"), "w+"
+                ) as fp:
+                    json.dump(out_img_coco, fp)
 
-                if args.flip:
-                    prob = torch.flip(prob, dims=[-1])
-
-                # Probability mask -> index mask
-                out_mask = torch.max(prob, dim=0).indices
-                out_mask = (out_mask.detach().cpu().numpy()).astype(np.uint8)
-
-                if args.save_scores:
-                    prob = (prob.detach().cpu().numpy() * 255).astype(np.uint8)
-
-                # Save the mask
-                if args.save_all or info["save"][0]:
-                    this_out_path = path.join(out_path, vid_name)
-                    out_mask = mapper.remap_index_mask(out_mask)
-
-                    tmp = frame.split("/")
-                    cam_name = tmp[0]
-                    object_name = "/".join(tmp[1:-1])
-                    f_name = tmp[-1]
-                    rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
-
-                    out_img_coco = mask_utils.encode(
-                        np.asfortranarray((out_mask // 255).astype(np.uint8))
-                    )
-                    out_img_coco["counts"] = out_img_coco["counts"].decode("utf-8")
-                    coco_out_path = path.join(out_path, "coco", vid_name)
-                    os.makedirs(coco_out_path, exist_ok=True)
-                    with open(
-                        path.join(coco_out_path, rgb_name[:-4] + ".json"), "w+"
-                    ) as fp:
-                        json.dump(out_img_coco, fp)
-        except Exception as e:
-            skip += 1
-            print(f"Error processing frame {take_id}: {e}")
-        # if args.save_scores:
-        #     np_path = path.join(args.output, 'Scores', vid_name)
-        #     os.makedirs(np_path, exist_ok=True)
-        #     if ti==len(loader)-1:
-        #         hkl.dump(mapper.remappings, path.join(np_path, f'backward.hkl'), mode='w')
-        #     if args.save_all or info['save'][0]:
-        #         hkl.dump(prob, path.join(np_path, f'{frame[:-4]}.hkl'), mode='w', compression='lzf')
-
-print(f"{skip} skipped videos due error")
 print(f"Total processing time: {total_process_time}")
 print(f"Total processed frames: {total_frames}")
 print(f"FPS: {total_frames / total_process_time}")
 print(f"Max allocated memory (MB): {torch.cuda.max_memory_allocated() / (2**20)}")
-
-if not args.save_scores:
-    if is_youtube:
-        print("Making zip for YouTubeVOS...")
-        shutil.make_archive(
-            path.join(args.output, path.basename(args.output)),
-            "zip",
-            args.output,
-            "Annotations",
-        )
-    elif is_davis and args.split == "test":
-        print("Making zip for DAVIS test-dev...")
-        shutil.make_archive(args.output, "zip", args.output)
