@@ -70,11 +70,11 @@ parser.add_argument(
     "--max_long_term_elements",
     help="LT_max in paper, increase if objects disappear for a long time",
     type=int,
-    default=10000,
+    default=20000,
 )
 parser.add_argument("--num_prototypes", help="P in paper", type=int, default=128)
 
-parser.add_argument("--top_k", type=int, default=30)
+parser.add_argument("--top_k", type=int, default=20)
 parser.add_argument(
     "--mem_every",
     help="r in paper. Increase to improve running speed.",
