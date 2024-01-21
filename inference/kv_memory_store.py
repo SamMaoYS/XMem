@@ -1,6 +1,7 @@
 import torch
 from typing import List
 
+
 class KeyValueMemoryStore:
     """
     Works for key/value pairs type storage
@@ -34,8 +35,15 @@ class KeyValueMemoryStore:
             self.use_count = self.life_count = None
 
     def add(self, key, value, shrinkage, selection, objects: List[int]):
-        new_count = torch.zeros((key.shape[0], 1, key.shape[2]), device=key.device, dtype=torch.float32)
-        new_life = torch.zeros((key.shape[0], 1, key.shape[2]), device=key.device, dtype=torch.float32) + 1e-7
+        new_count = torch.zeros(
+            (key.shape[0], 1, key.shape[2]), device=key.device, dtype=torch.float32
+        )
+        new_life = (
+            torch.zeros(
+                (key.shape[0], 1, key.shape[2]), device=key.device, dtype=torch.float32
+            )
+            + 1e-7
+        )
 
         # add the key
         if self.k is None:
@@ -62,7 +70,7 @@ class KeyValueMemoryStore:
             # First consume objects that are already in the memory bank
             # cannot use set here because we need to preserve order
             # shift by one as background is not part of value
-            remaining_objects = [obj-1 for obj in objects]
+            remaining_objects = [obj - 1 for obj in objects]
             for gi, group in enumerate(self.obj_groups):
                 for obj in group:
                     # should properly raise an error if there are overlaps in obj_groups
@@ -75,8 +83,10 @@ class KeyValueMemoryStore:
                 self.v.append(value[new_group])
                 self.obj_groups.append(new_group)
                 self.all_objects.extend(new_group)
-                
-                assert sorted(self.all_objects) == self.all_objects, 'Objects MUST be inserted in sorted order '
+
+                assert (
+                    sorted(self.all_objects) == self.all_objects
+                ), "Objects MUST be inserted in sorted order "
         else:
             # When objects is not given, v is a list that already has the object groups sorted
             # used in long-term memory
@@ -94,7 +104,7 @@ class KeyValueMemoryStore:
         # increase use of indexed elements
         if not self.count_usage:
             return
-        
+
         self.use_count += usage.view_as(self.use_count)
         self.life_count += 1
 
@@ -106,49 +116,61 @@ class KeyValueMemoryStore:
 
         if end == 0:
             # negative 0 would not work as the end index!
-            self.k = self.k[:,:,:start]
+            self.k = self.k[:, :, :start]
             if self.count_usage:
-                self.use_count = self.use_count[:,:,:start]
-                self.life_count = self.life_count[:,:,:start]
+                self.use_count = self.use_count[:, :, :start]
+                self.life_count = self.life_count[:, :, :start]
             if self.s is not None:
-                self.s = self.s[:,:,:start]
+                self.s = self.s[:, :, :start]
             if self.e is not None:
-                self.e = self.e[:,:,:start]
-            
+                self.e = self.e[:, :, :start]
+
             for gi in range(self.num_groups):
                 if self.v[gi].shape[-1] >= min_size:
-                    self.v[gi] = self.v[gi][:,:,:start]
+                    self.v[gi] = self.v[gi][:, :, :start]
         else:
-            self.k = torch.cat([self.k[:,:,:start], self.k[:,:,end:]], -1)
+            self.k = torch.cat([self.k[:, :, :start], self.k[:, :, end:]], -1)
             if self.count_usage:
-                self.use_count = torch.cat([self.use_count[:,:,:start], self.use_count[:,:,end:]], -1)
-                self.life_count = torch.cat([self.life_count[:,:,:start], self.life_count[:,:,end:]], -1)
+                self.use_count = torch.cat(
+                    [self.use_count[:, :, :start], self.use_count[:, :, end:]], -1
+                )
+                self.life_count = torch.cat(
+                    [self.life_count[:, :, :start], self.life_count[:, :, end:]], -1
+                )
             if self.s is not None:
-                self.s = torch.cat([self.s[:,:,:start], self.s[:,:,end:]], -1)
+                self.s = torch.cat([self.s[:, :, :start], self.s[:, :, end:]], -1)
             if self.e is not None:
-                self.e = torch.cat([self.e[:,:,:start], self.e[:,:,end:]], -1)
-            
+                self.e = torch.cat([self.e[:, :, :start], self.e[:, :, end:]], -1)
+
             for gi in range(self.num_groups):
                 if self.v[gi].shape[-1] >= min_size:
-                    self.v[gi] = torch.cat([self.v[gi][:,:,:start], self.v[gi][:,:,end:]], -1)
+                    self.v[gi] = torch.cat(
+                        [self.v[gi][:, :, :start], self.v[gi][:, :, end:]], -1
+                    )
 
     def remove_obsolete_features(self, max_size: int):
         # normalize with life duration
         usage = self.get_usage().flatten()
 
-        values, _ = torch.topk(usage, k=(self.size-max_size), largest=False, sorted=True)
-        survived = (usage > values[-1])
+        values, _ = torch.topk(
+            usage, k=(self.size - max_size), largest=False, sorted=True
+        )
+        if len(values) == 0:
+            return
+        survived = usage > values[-1]
 
         self.k = self.k[:, :, survived]
         self.s = self.s[:, :, survived] if self.s is not None else None
         # Long-term memory does not store ek so this should not be needed
         self.e = self.e[:, :, survived] if self.e is not None else None
         if self.num_groups > 1:
-            raise NotImplementedError("""The current data structure does not support feature removal with 
+            raise NotImplementedError(
+                """The current data structure does not support feature removal with 
             multiple object groups (e.g., some objects start to appear later in the video)
             The indices for "survived" is based on keys but not all values are present for every key
             Basically we need to remap the indices for keys to values
-            """)
+            """
+            )
         for gi in range(self.num_groups):
             self.v[gi] = self.v[gi][:, :, survived]
 
@@ -158,7 +180,7 @@ class KeyValueMemoryStore:
     def get_usage(self):
         # return normalized usage
         if not self.count_usage:
-            raise RuntimeError('I did not count usage!')
+            raise RuntimeError("I did not count usage!")
         else:
             usage = self.use_count / self.life_count
             return usage
@@ -168,15 +190,15 @@ class KeyValueMemoryStore:
 
         if end == 0:
             # negative 0 would not work as the end index!
-            k = self.k[:,:,start:]
-            sk = self.s[:,:,start:] if self.s is not None else None
-            ek = self.e[:,:,start:] if self.e is not None else None
-            usage = self.get_usage()[:,:,start:]
+            k = self.k[:, :, start:]
+            sk = self.s[:, :, start:] if self.s is not None else None
+            ek = self.e[:, :, start:] if self.e is not None else None
+            usage = self.get_usage()[:, :, start:]
         else:
-            k = self.k[:,:,start:end]
-            sk = self.s[:,:,start:end] if self.s is not None else None
-            ek = self.e[:,:,start:end] if self.e is not None else None
-            usage = self.get_usage()[:,:,start:end]
+            k = self.k[:, :, start:end]
+            sk = self.s[:, :, start:end] if self.s is not None else None
+            ek = self.e[:, :, start:end] if self.e is not None else None
+            usage = self.get_usage()[:, :, start:end]
 
         return k, sk, ek, usage
 
@@ -212,4 +234,3 @@ class KeyValueMemoryStore:
     @property
     def selection(self):
         return self.e
-

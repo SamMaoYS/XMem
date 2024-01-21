@@ -167,6 +167,26 @@ for vid_reader in progressbar(
 
     for ti, data in enumerate(loader):
         with torch.cuda.amp.autocast(enabled=not args.benchmark):
+            object_name = vid_reader.object_name
+            take_id = vid_reader.take_id
+            ref_cam_name = vid_reader.ref_cam_name
+            pred_cam_name = vid_reader.pred_cam_name
+
+            pred_folder_name = path.join(
+                take_id,
+                "__".join(
+                    [ref_cam_name, pred_cam_name],
+                ),
+                object_name,
+            )
+            coco_out_path = path.join(out_path, "coco", pred_folder_name)
+            frame = info["frame"][0]
+            tmp = frame.split("/")
+            f_name = tmp[-1]
+            rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
+            if os.path.isfile(path.join(coco_out_path, rgb_name[:-4] + ".json")):
+                continue
+
             rgb = data["rgb"].cuda()[0]
             ref_rgb = data["ref_rgb"].cuda()[0]
             msk = data["mask"]
@@ -223,18 +243,6 @@ for vid_reader in progressbar(
 
             # Save the mask
             if args.save_all or info["save"][0]:
-                object_name = vid_reader.object_name
-                take_id = vid_reader.take_id
-                ref_cam_name = vid_reader.ref_cam_name
-                pred_cam_name = vid_reader.pred_cam_name
-
-                pred_folder_name = path.join(
-                    take_id,
-                    "__".join(
-                        [ref_cam_name, pred_cam_name],
-                    ),
-                    object_name,
-                )
                 out_mask = mapper.remap_index_mask(out_mask)
 
                 tmp = frame.split("/")
