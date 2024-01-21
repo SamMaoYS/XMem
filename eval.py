@@ -164,6 +164,8 @@ for vid_reader in progressbar(
     mapper = MaskMapper()
     processor = InferenceCore(network, config=config)
     first_mask_loaded = False
+    if len(vid_reader.all_ref_keys) == 0:
+        continue
 
     for ti, data in enumerate(loader):
         with torch.cuda.amp.autocast(enabled=not args.benchmark):

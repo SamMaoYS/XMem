@@ -58,6 +58,8 @@ class EgoExoVideoReader(Dataset):
         self.all_ref_keys = np.asarray(
             natsorted(self.masks_data[self.object_name][self.ref_cam_name])
         ).astype(np.int64)
+        if len(self.all_ref_keys) == 0:
+            return
         first_anno_key = str(self.all_ref_keys[0])
 
         rgb_name = "{:06d}.jpg".format(int(int(first_anno_key) / 30 + 1))
