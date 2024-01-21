@@ -180,6 +180,7 @@ for vid_reader in progressbar(
                 object_name,
             )
             coco_out_path = path.join(out_path, "coco", pred_folder_name)
+            info = data["info"]
             frame = info["frame"][0]
             tmp = frame.split("/")
             f_name = tmp[-1]
