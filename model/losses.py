@@ -53,6 +53,7 @@ class LossComputer:
         self.bce = BootstrappedCE(config["start_warm"], config["end_warm"])
         self.bce_logits = torch.nn.BCEWithLogitsLoss(reduction="none")
         self.bce_logits_reduct = torch.nn.BCEWithLogitsLoss()
+        self.enable_segswap = config["enable_segswap"]
 
     def compute(self, data, num_objects, it):
         losses = defaultdict(int)
@@ -61,8 +62,6 @@ class LossComputer:
         ious = []
 
         losses["total_loss"] = 0
-        # losses["consistent_bce"] = 0
-        # losses["consistent_dice"] = 0
         for ti in range(1, t):
             for bi in range(b):
                 loss, p = self.bce(
@@ -90,33 +89,25 @@ class LossComputer:
             losses[f"dice_loss_{ti}"] = dice_loss(
                 data[f"masks_{ti}"], data["cls_gt"][:, ti, 0]
             )
-
-            # losses[f"consistent_bce"] += self.bce_logits_reduct(
-            #     data[f"masks_{ti}"], data["segswap_my"][:, ti, 0:1]
-            # )
-            # losses[f"consistent_dice"] += dice_loss(
-            #     data[f"masks_{ti}"], data["segswap_my"][:, ti, 0]
-            # )
             losses["total_loss"] += losses[f"dice_loss_{ti}"]
-        # losses["total_loss"] += losses[f"consistent_bce"]
-        # losses["total_loss"] += losses[f"consistent_dice"]
 
-        loss_ego = self.bce_logits(data["segswap_mx"], data["ego_cls_gt"].float())
-        loss_exo = self.bce_logits(data["segswap_my"], data["cls_gt"].float())
-        weights = torch.ones_like(data["cls_gt"])
-        weights = torch.where(data["cls_gt"] == 1, weights * 10, weights)
-        losses["segswap_bce"] = torch.mean(weights * (loss_exo + loss_ego))
-        losses["total_loss"] += losses["segswap_bce"]
+        if self.enable_segswap:
+            loss_ego = self.bce_logits(data["segswap_mx"], data["ego_cls_gt"].float())
+            loss_exo = self.bce_logits(data["segswap_my"], data["cls_gt"].float())
+            weights = torch.ones_like(data["cls_gt"])
+            weights = torch.where(data["cls_gt"] == 1, weights * 10, weights)
+            losses["segswap_bce"] = torch.mean(weights * (loss_exo + loss_ego))
+            losses["total_loss"] += losses["segswap_bce"]
 
-        loss_ego = dice_loss(
-            torch.flatten(data["segswap_mx"], 0, 1),
-            torch.flatten(data["ego_cls_gt"], 0, 1)[:, 0].float(),
-        )
-        loss_exo = dice_loss(
-            torch.flatten(data["segswap_my"], 0, 1),
-            torch.flatten(data["cls_gt"], 0, 1)[:, 0].float(),
-        )
-        losses["segswap_dice"] = loss_exo + loss_ego
-        losses["total_loss"] += losses["segswap_dice"]
+            loss_ego = dice_loss(
+                torch.flatten(data["segswap_mx"], 0, 1),
+                torch.flatten(data["ego_cls_gt"], 0, 1)[:, 0].float(),
+            )
+            loss_exo = dice_loss(
+                torch.flatten(data["segswap_my"], 0, 1),
+                torch.flatten(data["cls_gt"], 0, 1)[:, 0].float(),
+            )
+            losses["segswap_dice"] = loss_exo + loss_ego
+            losses["total_loss"] += losses["segswap_dice"]
 
         return losses, np.sum(ious) / len(ious) if len(ious) > 0 else None

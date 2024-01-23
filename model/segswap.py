@@ -152,6 +152,3 @@ def visualize(tensor1, tensor2, tensor3, tensor4):
         img_tensor4_i = Image.fromarray(
             tensor4_i.reshape(tensor4_i.shape[:2]).astype(np.uint8)
         )
-        import pdb
-
-        pdb.set_trace()

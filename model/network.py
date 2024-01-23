@@ -16,7 +16,7 @@ from model import segswap
 
 
 class XMem(nn.Module):
-    def __init__(self, config, model_path=None, map_location=None):
+    def __init__(self, config, model_path=None, map_location=None, enable_segswap=True):
         """
         model_path/map_location are used in evaluation only
         map_location is for converting models saved in cuda to cpu
@@ -32,15 +32,17 @@ class XMem(nn.Module):
             self.value_dim, self.hidden_dim, self.single_object
         )
 
-        # Projection from f16 feature space to key/value space
-        self.key_proj = KeyProjection(1024, self.key_dim)
-        self.fuse_feat = nn.Conv2d(1024 + 256, 1024, kernel_size=1)
+        self.enable_segswap = enable_segswap
+        if enable_segswap:
+            # Projection from f16 feature space to key/value space
+            self.key_proj = KeyProjection(1024, self.key_dim)
+            self.fuse_feat = nn.Conv2d(1024 + 256, 1024, kernel_size=1)
 
-        self.decoder = Decoder(self.value_dim, self.hidden_dim)
+            self.decoder = Decoder(self.value_dim, self.hidden_dim)
 
-        self.backbone, self.netEncoder = segswap.get_model(
-            config["segswap_model"], config.get("eval", False)
-        )
+            self.backbone, self.netEncoder = segswap.get_model(
+                config["segswap_model"], config.get("eval", False)
+            )
 
         if model_weights is not None:
             self.load_weights(model_weights, init_as_zero_if_needed=True)
@@ -69,10 +71,11 @@ class XMem(nn.Module):
         else:
             raise NotImplementedError
 
-        # get paths from ims
-        mx, my, fx, fy = segswap.forward_pass(
-            self.backbone, self.netEncoder, frame_ego, frame_exo, mask_ego
-        )
+        if self.enable_segswap:
+            # get paths from ims
+            mx, my, fx, fy = segswap.forward_pass(
+                self.backbone, self.netEncoder, frame_ego, frame_exo, mask_ego
+            )
 
         target_frames = [frame_exo]
         if return_ego:
@@ -84,8 +87,9 @@ class XMem(nn.Module):
 
             fuse_src = fy if i == 0 else fx
 
-            feat_cat = torch.concat([f16, fuse_src.to(torch.float16)], dim=1)
-            f16 = self.fuse_feat(feat_cat)
+            if self.enable_segswap:
+                feat_cat = torch.concat([f16, fuse_src.to(torch.float16)], dim=1)
+                f16 = self.fuse_feat(feat_cat)
 
             key, shrinkage, selection = self.key_proj(f16, need_sk, need_ek)
 
@@ -118,10 +122,12 @@ class XMem(nn.Module):
                 "f4": f4,
             }
 
-        if need_reshape:
+        if need_reshape and self.enable_segswap:
             mx = mx.view(b, t, *mx.shape[-3:])
             my = my.view(b, t, *my.shape[-3:])
-        return out, mx, my
+            return out, mx, my
+        else:
+            return out, None, None
 
     def encode_value(self, frame, image_feat_f16, h16, masks, is_deep_update=True):
         num_objects = masks.shape[1]

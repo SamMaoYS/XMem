@@ -23,6 +23,7 @@ class XMemTrainer:
         self.num_frames = config["num_frames"]
         self.num_ref_frames = config["num_ref_frames"]
         self.deep_update_prob = config["deep_update_prob"]
+        self.enable_segswap = config["enable_segswap"]
         self.local_rank = local_rank
 
         self.XMem = nn.parallel.DistributedDataParallel(
@@ -130,8 +131,9 @@ class XMemTrainer:
                 my[:, 0],
             )
             values = torch.cat([values, v16.unsqueeze(3)], 3)
-            out["segswap_mx"] = mx
-            out["segswap_my"] = my
+            if self.enable_segswap:
+                out["segswap_mx"] = mx
+                out["segswap_my"] = my
             ref_keys = torch.cat([ego_key[:, :, 0], key[:, :, 0]], 3)
             ref_shrinkage = (
                 torch.cat([ego_shrinkage[:, :, 0], shrinkage[:, :, 0]], 3)
