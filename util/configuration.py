@@ -12,7 +12,8 @@ class Configuration:
         # Enable torch.backends.cudnn.benchmark -- Faster in some cases, test in your own environment
         parser.add_argument("--benchmark", action="store_true")
         parser.add_argument("--no_amp", action="store_true")
-        parser.add_argument('--swap', action='store_true', default=False)
+        parser.add_argument("--swap", action="store_true", default=False)
+        parser.add_argument("--enable_segswap", action="store_true", default=False)
         parser.add_argument(
             "--segswap_model",
             type=str,
@@ -148,7 +149,9 @@ class Configuration:
         )
 
         # # Multiprocessing parameters, not set by users
-        parser.add_argument('--local_rank', default=0, type=int, help='Local rank of this process')
+        parser.add_argument(
+            "--local_rank", default=0, type=int, help="Local rank of this process"
+        )
 
         if unknown_arg_ok:
             args, _ = parser.parse_known_args()
