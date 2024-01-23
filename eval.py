@@ -31,6 +31,7 @@ Arguments loading
 parser = ArgumentParser()
 parser.add_argument("--model", default="./saves/XMem.pth")
 parser.add_argument("--swap", action="store_true", default=False)
+parser.add_argument("--enable_segswap", action="store_true", default=False)
 
 # Data options
 parser.add_argument("--e23_path", default="../data/correspondence/val")
@@ -143,7 +144,7 @@ meta_loader = meta_dataset.get_datasets()
 # Load our checkpoint
 config["segswap_model"] = args.model
 config["eval"] = True
-network = XMem(config, args.model).cuda().eval()
+network = XMem(config, args.model, enable_segswap=args.enable_segswap).cuda().eval()
 if args.model is not None:
     model_weights = torch.load(args.model)
     network.load_weights(model_weights, init_as_zero_if_needed=True)

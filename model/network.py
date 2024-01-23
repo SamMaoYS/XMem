@@ -32,13 +32,13 @@ class XMem(nn.Module):
             self.value_dim, self.hidden_dim, self.single_object
         )
 
+        # Projection from f16 feature space to key/value space
+        self.key_proj = KeyProjection(1024, self.key_dim)
+        self.decoder = Decoder(self.value_dim, self.hidden_dim)
+
         self.enable_segswap = enable_segswap
         if enable_segswap:
-            # Projection from f16 feature space to key/value space
-            self.key_proj = KeyProjection(1024, self.key_dim)
             self.fuse_feat = nn.Conv2d(1024 + 256, 1024, kernel_size=1)
-
-            self.decoder = Decoder(self.value_dim, self.hidden_dim)
 
             self.backbone, self.netEncoder = segswap.get_model(
                 config["segswap_model"], config.get("eval", False)
@@ -85,9 +85,8 @@ class XMem(nn.Module):
         for i, target_frame in enumerate(target_frames):
             f16, f8, f4 = self.key_encoder(target_frame)
 
-            fuse_src = fy if i == 0 else fx
-
             if self.enable_segswap:
+                fuse_src = fy if i == 0 else fx
                 feat_cat = torch.concat([f16, fuse_src.to(torch.float16)], dim=1)
                 f16 = self.fuse_feat(feat_cat)
 
