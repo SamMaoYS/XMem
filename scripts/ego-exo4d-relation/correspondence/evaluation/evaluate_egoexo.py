@@ -39,9 +39,11 @@ def evaluate_take(gt, pred):
             pred_masks_exo = {}
 
             if EGOCAM in gt["object_masks"][object_id].keys():
-                gt_masks_ego = gt["object_masks"][object_id][EGOCAM]
+                gt_masks_ego = gt["object_masks"][object_id][EGOCAM]["annotated_frames"]
             if exo_cam in gt["object_masks"][object_id].keys():
-                gt_masks_exo = gt["object_masks"][object_id][exo_cam]
+                gt_masks_exo = gt["object_masks"][object_id][exo_cam][
+                    "annotated_frames"
+                ]
             if (
                 object_id in pred["masks"].keys()
                 and f"{EGOCAM}__{exo_cam}" in pred["masks"][object_id].keys()
