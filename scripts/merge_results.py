@@ -62,3 +62,7 @@ def check_pred_format():
 
     with open(f"final_results_new.json", "w") as fp:
         json.dump(annotations, fp)
+
+
+if __name__ == "__main__":
+    check_pred_format()
