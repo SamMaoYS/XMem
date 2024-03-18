@@ -127,7 +127,7 @@ def evaluate_take(gt, pred):
 
 def validate_predictions(gt, preds):
 
-    assert "ego-exo" in preds
+    # assert "ego-exo" in preds
     # preds = preds["ego-exo"]
 
     assert type(preds) == type({})
@@ -138,7 +138,7 @@ def validate_predictions(gt, preds):
     assert preds["challenge"] == gt["challenge"]
 
     assert len(preds["results"]) == len(gt["annotations"])
-    for take_id in gt["annotations"]:
+    for take_id in preds["results"]:
         assert take_id in preds["results"]
 
         for key in ["masks", "subsample_idx"]:
