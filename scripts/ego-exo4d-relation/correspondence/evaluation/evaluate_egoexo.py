@@ -39,18 +39,15 @@ def evaluate_take(gt, pred):
             pred_masks_exo = {}
 
             if EGOCAM in gt["object_masks"][object_id].keys():
-                gt_masks_ego = gt["object_masks"][object_id][EGOCAM]
+                gt_masks_ego = gt["object_masks"][object_id][EGOCAM]["annotation"]
             if exo_cam in gt["object_masks"][object_id].keys():
-                gt_masks_exo = gt["object_masks"][object_id][exo_cam]
+                gt_masks_exo = gt["object_masks"][object_id][exo_cam]["annotation"]
             if (
                 object_id in pred["masks"].keys()
                 and f"{EGOCAM}__{exo_cam}" in pred["masks"][object_id].keys()
             ):
                 pred_masks_exo = pred["masks"][object_id][f"{EGOCAM}__{exo_cam}"]
 
-            import pdb
-
-            pdb.set_trace()
             for frame_idx in gt_masks_ego["annotated_frames"]:
                 if (
                     int(frame_idx)
@@ -58,11 +55,11 @@ def evaluate_take(gt, pred):
                 ):
                     continue
 
-                if not frame_idx in gt_masks_exo:
+                if not str(frame_idx) in gt_masks_exo:
                     gt_mask = None
                     gt_obj_exists = 0
                 else:
-                    gt_mask = mask_utils.decode(gt_masks_exo[frame_idx])
+                    gt_mask = mask_utils.decode(gt_masks_exo[str(frame_idx)])
                     # reshaping without padding for evaluation
                     # # TODO: remove from here: move to inference script
                     # gt_mask = utils.reshape_img_nopad(gt_mask)
