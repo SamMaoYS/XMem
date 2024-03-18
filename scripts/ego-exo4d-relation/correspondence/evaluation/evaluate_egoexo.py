@@ -144,6 +144,9 @@ def validate_predictions(gt, preds):
             assert key in preds["results"][take_id]
 
         # check objs
+        import pdb
+
+        pdb.set_trace()
         assert len(preds["results"][take_id]["masks"]) == len(
             gt["results"][take_id]["masks"]
         )
