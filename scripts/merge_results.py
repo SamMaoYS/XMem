@@ -60,7 +60,7 @@ def check_pred_format(PRED_DIR):
         annotations["results"][vid] = correct_anno
 
     output_dir = os.path.dirname(PRED_DIR)
-    with open(f"{output_dir}/final_results_new.json", "w") as fp:
+    with open(f"{output_dir}/gt_results.json", "w") as fp:
         json.dump(annotations, fp)
 
 
