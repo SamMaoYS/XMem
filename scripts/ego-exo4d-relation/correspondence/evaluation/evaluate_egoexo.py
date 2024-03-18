@@ -59,6 +59,9 @@ def evaluate_take(gt, pred):
                     gt_mask = None
                     gt_obj_exists = 0
                 else:
+                    import pdb
+
+                    pdb.set_trace()
                     gt_mask = mask_utils.decode(
                         gt_masks_exo[str(frame_idx)]["encodedMask"]
                     )
