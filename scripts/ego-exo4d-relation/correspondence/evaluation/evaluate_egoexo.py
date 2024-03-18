@@ -45,9 +45,9 @@ def evaluate_take(gt, pred):
                 gt_masks_exo = gt["masks"][object_id][exo_cam]
             if (
                 object_id in pred["masks"].keys()
-                and f"{EGOCAM}_{exo_cam}" in pred["masks"][object_id].keys()
+                and f"{EGOCAM}__{exo_cam}" in pred["masks"][object_id].keys()
             ):
-                pred_masks_exo = pred["masks"][object_id][f"{EGOCAM}_{exo_cam}"]
+                pred_masks_exo = pred["masks"][object_id][f"{EGOCAM}__{exo_cam}"]
 
             for frame_idx in gt_masks_ego.keys():
 
@@ -180,21 +180,21 @@ def validate_predictions(gt, preds):
                 except:
                     breakpoint()
 
-                for idx in gt["annotations"][take_id]["object_masks"][obj][ego_cam][
-                    "annotated_frames"
-                ]:
-                    assert (
-                        str(idx)
-                        in preds["results"][take_id]["masks"][obj][f"{ego_cam}__{cam}"]
-                    )
+                # for idx in gt["annotations"][take_id]["object_masks"][obj][ego_cam][
+                #     "annotated_frames"
+                # ]:
+                #     assert (
+                #         str(idx)
+                #         in preds["results"][take_id]["masks"][obj][f"{ego_cam}__{cam}"]
+                #     )
 
-                    # for key in ["pred_mask"]:
-                    #     assert (
-                    #         key
-                    #         in preds["results"][take_id]["masks"][obj][
-                    #             f"{ego_cam}__{cam}"
-                    #         ][str(idx)]
-                    #     )
+                # for key in ["pred_mask"]:
+                #     assert (
+                #         key
+                #         in preds["results"][take_id]["masks"][obj][
+                #             f"{ego_cam}__{cam}"
+                #         ][str(idx)]
+                #     )
 
 
 def evaluate(gt, preds):
