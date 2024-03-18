@@ -24,27 +24,24 @@ def evaluate_take(gt, pred):
     ObjSizeGT = []
     ObjSizePred = []
     IMSize = []
-    import pdb
-
-    pdb.set_trace()
-    for object_id in gt["masks"].keys():
-        ego_cams = [x for x in gt["masks"][object_id].keys() if "aria" in x]
+    for object_id in gt["object_masks"].keys():
+        ego_cams = [x for x in gt["object_masks"][object_id].keys() if "aria" in x]
         # TODO: remove takes with no ego cam annotations from gt
         if len(ego_cams) < 1:
             continue
         assert len(ego_cams) == 1
         EGOCAM = ego_cams[0]
 
-        EXOCAMS = [x for x in gt["masks"][object_id].keys() if "aria" not in x]
+        EXOCAMS = [x for x in gt["object_masks"][object_id].keys() if "aria" not in x]
         for exo_cam in EXOCAMS:
             gt_masks_ego = {}
             gt_masks_exo = {}
             pred_masks_exo = {}
 
-            if EGOCAM in gt["masks"][object_id].keys():
-                gt_masks_ego = gt["masks"][object_id][EGOCAM]
-            if exo_cam in gt["masks"][object_id].keys():
-                gt_masks_exo = gt["masks"][object_id][exo_cam]
+            if EGOCAM in gt["object_masks"][object_id].keys():
+                gt_masks_ego = gt["object_masks"][object_id][EGOCAM]
+            if exo_cam in gt["object_masks"][object_id].keys():
+                gt_masks_exo = gt["object_masks"][object_id][exo_cam]
             if (
                 object_id in pred["masks"].keys()
                 and f"{EGOCAM}__{exo_cam}" in pred["masks"][object_id].keys()
