@@ -80,7 +80,7 @@ def evaluate_take(gt, pred):
 
                 gt_obj_exists = gt_obj_exists and (np.sum(gt_mask) > 0)
 
-                if gt_obj_exists:
+                if gt_obj_exists and pred_obj_exists:
                     gt_mask = cv2.resize(
                         gt_mask, (pred_mask.shape[1], pred_mask.shape[0])
                     )
