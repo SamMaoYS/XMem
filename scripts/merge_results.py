@@ -1,14 +1,15 @@
+import os
 import json
 from tqdm import tqdm
 from pycocotools import mask as mask_utils
 import numpy as np
+import argparse
 
 
-def check_pred_format():
+def check_pred_format(PRED_DIR):
     from copy import deepcopy
 
     ROOT_DIR = "/localscratch/yma50/XMem/data/correspondence"
-    PRED_DIR = "/localscratch/yma50/results/egoexo_segswap_test_new/coco"
 
     annotations_file = f"{ROOT_DIR}/relations_objects_latest.json"
     with open(annotations_file, "r") as fp:
@@ -58,9 +59,17 @@ def check_pred_format():
 
         annotations["results"][vid] = correct_anno
 
-    with open(f"final_results_new.json", "w") as fp:
+    output_dir = os.path.dirname(PRED_DIR)
+    with open(f"{output_dir}/final_results_new.json", "w") as fp:
         json.dump(annotations, fp)
 
 
 if __name__ == "__main__":
-    check_pred_format()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--pred_dir",
+        help="The predicted path",
+        required=True,
+    )
+    args = parser.parse_args()
+    check_pred_format(args.pred_dir)
