@@ -48,12 +48,12 @@ def evaluate_take(gt, pred):
             ):
                 pred_masks_exo = pred["masks"][object_id][f"{EGOCAM}__{exo_cam}"]
 
-            for frame_idx in gt_masks_ego["annotated_frames"]:
-                if (
-                    int(frame_idx)
-                    not in gt["object_masks"][object_id][exo_cam]["annotated_frames"]
-                ):
-                    continue
+            for frame_idx in gt["object_masks"][object_id][exo_cam]["annotated_frames"]:
+                # if (
+                #     int(frame_idx)
+                #     not in gt["object_masks"][object_id][exo_cam]["annotated_frames"]
+                # ):
+                #     continue
 
                 if not str(frame_idx) in gt_masks_exo:
                     gt_mask = None
