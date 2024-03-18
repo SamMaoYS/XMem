@@ -128,7 +128,7 @@ def evaluate_take(gt, pred):
 def validate_predictions(gt, preds):
 
     assert "ego-exo" in preds
-    preds = preds["ego-exo"]
+    # preds = preds["ego-exo"]
 
     assert type(preds) == type({})
     for key in ["version", "challenge", "results"]:
@@ -197,7 +197,7 @@ def validate_predictions(gt, preds):
 def evaluate(gt, preds):
 
     validate_predictions(gt, preds)
-    preds = preds["ego-exo"]
+    # preds = preds["ego-exo"]
 
     total_iou = []
     total_shape_acc = []
