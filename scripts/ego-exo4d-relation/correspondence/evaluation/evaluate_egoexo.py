@@ -59,10 +59,9 @@ def evaluate_take(gt, pred):
                     gt_mask = None
                     gt_obj_exists = 0
                 else:
-                    import pdb
-
-                    pdb.set_trace()
-                    gt_mask = mask_utils.decode(gt_masks_exo[str(frame_idx)])
+                    gt_mask = mask_utils.decode(
+                        gt_masks_exo[str(frame_idx)]["encodedMask"]
+                    )
                     # reshaping without padding for evaluation
                     # # TODO: remove from here: move to inference script
                     # gt_mask = utils.reshape_img_nopad(gt_mask)
