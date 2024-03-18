@@ -77,7 +77,7 @@ def evaluate_take(gt, pred):
                     breakpoint()
 
                 pred_obj_exists = int(
-                    pred_masks_exo[frame_idx]["confidence"] > CONF_THRESH
+                    pred_masks_exo[frame_idx].get("confidence", 1) > CONF_THRESH
                 )
 
                 if gt_obj_exists:
@@ -185,7 +185,7 @@ def validate_predictions(gt, preds):
                     "annotated_frames"
                 ]:
                     assert (
-                        idx
+                        str(idx)
                         in preds["results"][take_id]["masks"][obj][f"{ego_cam}__{cam}"]
                     )
 
@@ -194,7 +194,7 @@ def validate_predictions(gt, preds):
                             key
                             in preds["results"][take_id]["masks"][obj][
                                 f"{ego_cam}__{cam}"
-                            ][idx]
+                            ][str(idx)]
                         )
 
 
