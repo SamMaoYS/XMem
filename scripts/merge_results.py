@@ -33,20 +33,20 @@ def check_pred_format(PRED_DIR):
                 for frame_idx in vid_anno["masks"][obj][cam]:
                     mask = mask_utils.decode(vid_anno["masks"][obj][cam][frame_idx])
 
-                    if (
-                        frame_idx
-                        in gt_annotations[vid]["object_masks"][obj][cam.split("_")[-1]][
-                            "annotation"
-                        ]
-                    ):
-                        width = gt_annotations[vid]["object_masks"][obj][
-                            cam.split("_")[-1]
-                        ]["annotation"][frame_idx]["width"]
-                        height = gt_annotations[vid]["object_masks"][obj][
-                            cam.split("_")[-1]
-                        ]["annotation"][frame_idx]["height"]
-                        # gt_mask = gt_annotations[vid]['object_masks'][obj][cam]
-                        # mask = utils.remove_pad(mask, orig_size=(height, width))
+                    # if (
+                    #     frame_idx
+                    #     in gt_annotations[vid]["object_masks"][obj][cam.split("_")[-1]][
+                    #         "annotation"
+                    #     ]
+                    # ):
+                    #     width = gt_annotations[vid]["object_masks"][obj][
+                    #         cam.split("_")[-1]
+                    #     ]["annotation"][frame_idx]["width"]
+                    #     height = gt_annotations[vid]["object_masks"][obj][
+                    #         cam.split("_")[-1]
+                    #     ]["annotation"][frame_idx]["height"]
+                    # gt_mask = gt_annotations[vid]['object_masks'][obj][cam]
+                    # mask = utils.remove_pad(mask, orig_size=(height, width))
 
                     encoded_mask = mask_utils.encode(np.asfortranarray(mask))
                     encoded_mask["counts"] = encoded_mask["counts"].decode("ascii")
