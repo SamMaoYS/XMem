@@ -176,22 +176,18 @@ def validate_predictions(gt, preds):
 
             for cam in exo_cams:
                 try:
-                    assert f"{ego_cam}_{cam}" in preds["results"][take_id]["masks"][obj]
+                    assert f"{cam}" in preds["results"][take_id]["masks"][obj]
+                    # assert f"{cam}" in preds["results"][take_id]["masks"][obj]
                 except:
                     breakpoint()
 
                 for idx in gt["annotations"][take_id]["object_masks"][obj][ego_cam]:
-                    assert (
-                        idx
-                        in preds["results"][take_id]["masks"][obj][f"{ego_cam}_{cam}"]
-                    )
+                    assert idx in preds["results"][take_id]["masks"][obj][f"{cam}"]
 
                     for key in ["pred_mask", "confidence"]:
                         assert (
                             key
-                            in preds["results"][take_id]["masks"][obj][
-                                f"{ego_cam}_{cam}"
-                            ][idx]
+                            in preds["results"][take_id]["masks"][obj][f"{cam}"][idx]
                         )
 
 
