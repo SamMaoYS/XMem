@@ -181,7 +181,7 @@ def validate_predictions(gt, preds):
                 except:
                     breakpoint()
 
-                for idx in gt["annotations"][take_id]["object_masks"][obj][ego_cam]:
+                for idx in gt["annotations"][take_id]["object_masks"][obj][cam]:
                     assert idx in preds["results"][take_id]["masks"][obj][f"{cam}"]
 
                     for key in ["pred_mask", "confidence"]:
