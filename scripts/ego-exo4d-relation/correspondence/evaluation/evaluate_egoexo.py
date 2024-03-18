@@ -77,8 +77,9 @@ def evaluate_take(gt, pred):
                     breakpoint()
 
                 pred_obj_exists = int(
-                    pred_masks_exo[frame_idx]["confidence"] > CONF_THRESH
+                    pred_masks_exo[frame_idx].get("confidence", 1) > CONF_THRESH
                 )
+                pred_obj_exists = np.sum(pred_masks_exo[frame_idx]["pred_mask"]) > 0
 
                 if gt_obj_exists:
                     # iou and shape accuracy
@@ -141,7 +142,7 @@ def validate_predictions(gt, preds):
     for take_id in preds["results"]:
         assert take_id in preds["results"]
 
-        for key in ["masks", "subsample_idx"]:
+        for key in ["masks"]:
             assert key in preds["results"][take_id]
 
         # check objs
@@ -185,7 +186,7 @@ def validate_predictions(gt, preds):
                         in preds["results"][take_id]["masks"][obj][f"{ego_cam}__{cam}"]
                     )
 
-                    for key in ["pred_mask", "confidence"]:
+                    for key in ["pred_mask"]:
                         assert (
                             key
                             in preds["results"][take_id]["masks"][obj][
