@@ -6,6 +6,7 @@ import tqdm
 from sklearn.metrics import balanced_accuracy_score
 
 import utils
+import cv2
 
 CONF_THRESH = 0.5
 H, W = 480, 480  # resolution for evalution
@@ -59,11 +60,14 @@ def evaluate_take(gt, pred):
                     gt_mask = None
                     gt_obj_exists = 0
                 else:
-                    import pdb
-
-                    pdb.set_trace()
                     gt_mask = mask_utils.decode(
-                        gt_masks_exo[str(frame_idx)]["encodedMask"]
+                        {
+                            "size": [
+                                gt_masks_exo[str(frame_idx)]["height"],
+                                gt_masks_exo[str(frame_idx)]["width"],
+                            ],
+                            "counts": gt_masks_exo[str(frame_idx)]["encodedMask"],
+                        }
                     )
                     # reshaping without padding for evaluation
                     # # TODO: remove from here: move to inference script
@@ -88,6 +92,9 @@ def evaluate_take(gt, pred):
                 if gt_obj_exists:
                     # iou and shape accuracy
                     try:
+                        gt_mask = cv2.resize(
+                            gt_mask, (pred_mask.shape[0], pred_mask.shape[1])
+                        )
                         iou, shape_acc = utils.eval_mask(gt_mask, pred_mask)
                     except:
                         breakpoint()
