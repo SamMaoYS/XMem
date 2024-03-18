@@ -49,10 +49,10 @@ def evaluate_take(gt, pred):
                 pred_masks_exo = pred["masks"][object_id][f"{EGOCAM}__{exo_cam}"]
 
             for frame_idx in gt_masks_ego.keys():
-                import pdb
-
-                pdb.set_trace()
-                if int(frame_idx) not in gt["annotated_frames"][object_id][exo_cam]:
+                if (
+                    int(frame_idx)
+                    not in gt["object_masks"][object_id][exo_cam]["annotated_frames"]
+                ):
                     continue
 
                 if not frame_idx in gt_masks_exo:
@@ -67,7 +67,7 @@ def evaluate_take(gt, pred):
                     gt_obj_exists = 1
 
                 try:
-                    pred_mask = mask_utils.decode(pred_masks_exo[frame_idx])
+                    pred_mask = mask_utils.decode(pred_masks_exo[str(frame_idx)])
                     # remove padding from the predictions
                     # # TODO: remove from here: move to inference script
                     # if not gt_mask is None:
