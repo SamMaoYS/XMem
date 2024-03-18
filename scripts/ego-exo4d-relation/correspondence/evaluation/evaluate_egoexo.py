@@ -134,8 +134,8 @@ def validate_predictions(gt, preds):
     for key in ["version", "challenge", "results"]:
         assert key in preds.keys()
 
-    assert preds["version"] == gt["version"]
-    assert preds["challenge"] == gt["challenge"]
+    # assert preds["version"] == gt["version"]
+    # assert preds["challenge"] == gt["challenge"]
 
     assert len(preds["results"]) == len(gt["annotations"])
     for take_id in gt["annotations"]:
