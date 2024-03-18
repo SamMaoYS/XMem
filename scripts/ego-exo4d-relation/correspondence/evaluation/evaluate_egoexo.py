@@ -213,7 +213,7 @@ def evaluate(gt, preds):
     total_obj_exists_gt = []
     total_obj_exists_pred = []
 
-    for take_id in tqdm.tqdm(gt["annotations"]):
+    for take_id in tqdm.tqdm(preds["results"]):
 
         (
             ious,
@@ -225,7 +225,7 @@ def evaluate(gt, preds):
             obj_size_gt,
             obj_size_pred,
             img_sizes,
-        ) = evaluate_take(gt["annotations"][take_id], preds["results"][take_id])
+        ) = evaluate_take(gt["results"][take_id], preds["results"][take_id])
 
         total_iou += ious
         total_shape_acc += shape_accs
