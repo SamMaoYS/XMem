@@ -76,6 +76,9 @@ def evaluate_take(gt, pred):
                 pred_obj_exists = int(
                     pred_masks_exo[frame_idx].get("confidence", 1) > CONF_THRESH
                 )
+                import pdb
+
+                pdb.set_trace()
                 pred_obj_exists = np.sum(pred_masks_exo[frame_idx]) > 0
 
                 if gt_obj_exists:
