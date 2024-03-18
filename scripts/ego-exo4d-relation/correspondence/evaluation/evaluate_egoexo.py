@@ -216,7 +216,7 @@ def evaluate(gt, preds):
     total_obj_exists_gt = []
     total_obj_exists_pred = []
 
-    for take_id in tqdm.tqdm(gt["annotations"]):
+    for take_id in tqdm.tqdm(preds["results"]):
 
         (
             ious,
