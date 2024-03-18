@@ -79,6 +79,9 @@ def evaluate_take(gt, pred):
                 pred_obj_exists = np.sum(pred_mask) > 0
 
                 if gt_obj_exists:
+                    gt_mask = cv2.resize(
+                        gt_mask, (pred_mask.shape[1], pred_mask.shape[2])
+                    )
                     # iou and shape accuracy
                     try:
                         iou, shape_acc = utils.eval_mask(gt_mask, pred_mask)
