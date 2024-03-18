@@ -24,7 +24,9 @@ def evaluate_take(gt, pred):
     ObjSizeGT = []
     ObjSizePred = []
     IMSize = []
+    import pdb
 
+    pdb.set_trace()
     for object_id in gt["masks"].keys():
         ego_cams = [x for x in gt["masks"][object_id].keys() if "aria" in x]
         # TODO: remove takes with no ego cam annotations from gt
