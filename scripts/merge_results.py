@@ -23,7 +23,7 @@ def check_pred_format(PRED_DIR):
 
     annotations = {"version": "xx", "challenge": "xx", "results": {}}
     for vid in tqdm(videos):
-        with open(f"{PRED_DIR}/{vid}/annotation.json", "r") as fp:
+        with open(f"{PRED_DIR}/{vid}/annotations.json", "r") as fp:
             vid_anno = json.load(fp)
 
         correct_anno = deepcopy(vid_anno)
@@ -60,7 +60,7 @@ def check_pred_format(PRED_DIR):
         annotations["results"][vid] = correct_anno
 
     output_dir = os.path.dirname(PRED_DIR)
-    with open(f"{output_dir}/gt_results.json", "w") as fp:
+    with open(f"{output_dir}/final_results_new.json", "w") as fp:
         json.dump(annotations, fp)
 
 
