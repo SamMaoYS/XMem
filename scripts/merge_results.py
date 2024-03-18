@@ -30,9 +30,7 @@ def check_pred_format():
             for cam in vid_anno["masks"][obj]:
                 # exo_cam = cam.split('_')[-1]
                 for frame_idx in vid_anno["masks"][obj][cam]:
-                    mask = mask_utils.decode(
-                        vid_anno["masks"][obj][cam][frame_idx]["pred_mask"]
-                    )
+                    mask = mask_utils.decode(vid_anno["masks"][obj][cam][frame_idx])
 
                     if (
                         frame_idx
@@ -51,7 +49,7 @@ def check_pred_format():
 
                     encoded_mask = mask_utils.encode(np.asfortranarray(mask))
                     encoded_mask["counts"] = encoded_mask["counts"].decode("ascii")
-                    vid_anno["masks"][obj][cam][frame_idx]["pred_mask"] = encoded_mask
+                    vid_anno["masks"][obj][cam][frame_idx] = encoded_mask
 
                 # vid_anno['masks'][obj][cam]['4350']['pred_mask']
                 #
