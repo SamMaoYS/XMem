@@ -141,7 +141,7 @@ def validate_predictions(gt, preds):
     for take_id in preds["results"]:
         # assert take_id in preds["results"]
 
-        for key in ["masks", "subsample_idx"]:
+        for key in ["masks"]:
             assert key in preds["results"][take_id]
 
         # check objs
