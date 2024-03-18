@@ -140,7 +140,7 @@ def validate_predictions(gt, preds):
     import pdb
 
     pdb.set_trace()
-    assert len(preds["results"]) == len(gt["annotations"])
+    assert len(preds["results"]) == len(gt["results"])
     for take_id in preds["results"]:
         assert take_id in preds["results"]
 
@@ -149,16 +149,16 @@ def validate_predictions(gt, preds):
 
         # check objs
         assert len(preds["results"][take_id]["masks"]) == len(
-            gt["annotations"][take_id]["masks"]
+            gt["results"][take_id]["masks"]
         )
-        for obj in gt["annotations"][take_id]["masks"]:
+        for obj in gt["results"][take_id]["masks"]:
             assert (
                 obj in preds["results"][take_id]["masks"]
             ), f"{obj} not in pred {take_id}"
 
             ego_cam = None
             exo_cams = []
-            for cam in gt["annotations"][take_id]["masks"][obj]:
+            for cam in gt["results"][take_id]["masks"][obj]:
                 if "aria" in cam:
                     ego_cam = cam
                 else:
@@ -182,7 +182,7 @@ def validate_predictions(gt, preds):
                 except:
                     breakpoint()
 
-                for idx in gt["annotations"][take_id]["masks"][obj][ego_cam]:
+                for idx in gt["results"][take_id]["masks"][obj][ego_cam]:
                     assert (
                         idx
                         in preds["results"][take_id]["masks"][obj][f"{ego_cam}__{cam}"]
