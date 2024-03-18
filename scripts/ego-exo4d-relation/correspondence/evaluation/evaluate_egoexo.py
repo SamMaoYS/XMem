@@ -66,9 +66,7 @@ def evaluate_take(gt, pred):
                     gt_obj_exists = 1
 
                 try:
-                    pred_mask = mask_utils.decode(
-                        pred_masks_exo[frame_idx]["pred_mask"]
-                    )
+                    pred_mask = mask_utils.decode(pred_masks_exo[frame_idx])
                     # remove padding from the predictions
                     # # TODO: remove from here: move to inference script
                     # if not gt_mask is None:
@@ -79,7 +77,7 @@ def evaluate_take(gt, pred):
                 pred_obj_exists = int(
                     pred_masks_exo[frame_idx].get("confidence", 1) > CONF_THRESH
                 )
-                pred_obj_exists = np.sum(pred_masks_exo[frame_idx]["pred_mask"]) > 0
+                pred_obj_exists = np.sum(pred_masks_exo[frame_idx]) > 0
 
                 if gt_obj_exists:
                     # iou and shape accuracy
@@ -186,13 +184,13 @@ def validate_predictions(gt, preds):
                         in preds["results"][take_id]["masks"][obj][f"{ego_cam}__{cam}"]
                     )
 
-                    for key in ["pred_mask"]:
-                        assert (
-                            key
-                            in preds["results"][take_id]["masks"][obj][
-                                f"{ego_cam}__{cam}"
-                            ][idx]
-                        )
+                    # for key in :
+                    #     assert (
+                    #         key
+                    #         in preds["results"][take_id]["masks"][obj][
+                    #             f"{ego_cam}__{cam}"
+                    #         ][idx]
+                    #     )
 
 
 def evaluate(gt, preds):
