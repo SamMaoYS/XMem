@@ -175,7 +175,9 @@ def validate_predictions(gt, preds):
 
             for cam in exo_cams:
                 try:
-                    assert f"{cam}" in preds["results"][take_id]["masks"][obj]
+                    assert (
+                        f"{ego_cam}__{cam}" in preds["results"][take_id]["masks"][obj]
+                    )
                     # assert f"{cam}" in preds["results"][take_id]["masks"][obj]
                 except:
                     breakpoint()
