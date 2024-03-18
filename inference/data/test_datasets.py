@@ -125,6 +125,8 @@ class EgoExoTestDataset:
         print(len(takes))
 
         for take_id in self.takes:
+            if take_id not in ["6f0b44c4-0067-4677-a775-53181d9b0457", "22568049-4087-4ca2-8857-a834a9fc7f28"]:
+                continue
             annotation_path = os.path.join(self.data_root, take_id, "annotation.json")
             if not os.path.exists(annotation_path):
                 continue
@@ -149,8 +151,9 @@ class EgoExoTestDataset:
                     if cam_name == ego_cam_name:
                         continue
 
-                    frames = np.intersect1d(ego_frames, exo_frames)
-                    if len(frames) < num_frames:
+                    frames = exo_frames
+                    print(len(frames))
+                    if len(frames) < 1:
                         continue
 
                     vid = path.join(take_id, ego_cam_name, cam_name, object_name)

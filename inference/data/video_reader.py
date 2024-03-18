@@ -158,7 +158,7 @@ class EgoExoVideoReader(Dataset):
         self.data_root = data_root
         self.ego_cam_name = ego_image_dir.split("/")[-2]
 
-        f_name = self.frames[0].split("/")[-1]
+        f_name = self.frames[2].split("/")[-1]
         rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
         rgb_name = os.path.join(
             self.data_root, self.take_id, self.ego_cam_name, rgb_name

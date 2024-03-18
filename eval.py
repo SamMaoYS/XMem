@@ -269,7 +269,7 @@ for vid_reader in progressbar(
                 rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
                 coco_out_path = path.join(out_path, "coco", vid_name)
                 if path.isfile(path.join(coco_out_path, rgb_name[:-4] + ".json")):
-                    continue
+                    pass
 
                 """
                 For timing see https://discuss.pytorch.org/t/how-to-measure-time-in-pytorch/26964
@@ -342,6 +342,7 @@ for vid_reader in progressbar(
                     )
                     out_img_coco["counts"] = out_img_coco["counts"].decode("utf-8")
                     coco_out_path = path.join(out_path, "coco", vid_name)
+                    print(coco_out_path)
                     os.makedirs(coco_out_path, exist_ok=True)
                     with open(
                         path.join(coco_out_path, rgb_name[:-4] + ".json"), "w+"
