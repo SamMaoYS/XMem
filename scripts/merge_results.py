@@ -1,5 +1,7 @@
 import json
 from tqdm import tqdm
+from pycocotools import mask as mask_utils
+import numpy as np
 
 
 def check_pred_format():
@@ -19,8 +21,8 @@ def check_pred_format():
     videos = splits["test"]
 
     annotations = {"version": "xx", "challenge": "xx", "results": {}}
-    for vid in tqdm.tqdm(videos):
-        with open(f"{PRED_DIR}/{vid}/pred_annotations.json", "r") as fp:
+    for vid in tqdm(videos):
+        with open(f"{PRED_DIR}/{vid}/annotations.json", "r") as fp:
             vid_anno = json.load(fp)
 
         correct_anno = deepcopy(vid_anno)
@@ -45,7 +47,7 @@ def check_pred_format():
                             cam.split("_")[-1]
                         ]["annotation"][frame_idx]["height"]
                         # gt_mask = gt_annotations[vid]['object_masks'][obj][cam]
-                        mask = utils.remove_pad(mask, orig_size=(height, width))
+                        # mask = utils.remove_pad(mask, orig_size=(height, width))
 
                     encoded_mask = mask_utils.encode(np.asfortranarray(mask))
                     encoded_mask["counts"] = encoded_mask["counts"].decode("ascii")
