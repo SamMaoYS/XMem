@@ -48,6 +48,8 @@ def process_take(take_id, input, pred):
                 pred_mask_path = os.path.join(
                     pred, take_id, cams_str, object_name, f_str + ".json"
                 )
+                if not os.path.isfile(pred_mask_path):
+                    continue
                 with open(pred_mask_path, "r") as fp:
                     pred_mask_data = json.load(fp)
                 pred_masks[object_name][cams_str][f_name] = pred_mask_data
