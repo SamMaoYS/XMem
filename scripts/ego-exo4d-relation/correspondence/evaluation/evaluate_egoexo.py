@@ -137,7 +137,12 @@ def validate_predictions(gt, preds):
     # assert preds["version"] == gt["version"]
     # assert preds["challenge"] == gt["challenge"]
 
-    assert len(preds["results"]) == len(gt["annotations"])
+    try:
+        assert len(preds["results"]) == len(gt["annotations"])
+    except:
+        import pdb
+
+        pdb.set_trace()
     for take_id in gt["annotations"]:
         assert take_id in preds["results"]
 
