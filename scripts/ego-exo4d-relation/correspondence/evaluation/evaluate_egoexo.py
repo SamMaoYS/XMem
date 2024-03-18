@@ -4,9 +4,8 @@ from pycocotools import mask as mask_utils
 import numpy as np
 import tqdm
 from sklearn.metrics import balanced_accuracy_score
-
-import utils
 import cv2
+import utils
 
 CONF_THRESH = 0.5
 H, W = 480, 480  # resolution for evalution
@@ -25,50 +24,41 @@ def evaluate_take(gt, pred):
     ObjSizeGT = []
     ObjSizePred = []
     IMSize = []
-    for object_id in gt["object_masks"].keys():
-        ego_cams = [x for x in gt["object_masks"][object_id].keys() if "aria" in x]
+
+    for object_id in gt["masks"].keys():
+        ego_cams = [x for x in gt["masks"][object_id].keys() if "aria" in x]
         # TODO: remove takes with no ego cam annotations from gt
         if len(ego_cams) < 1:
             continue
         assert len(ego_cams) == 1
         EGOCAM = ego_cams[0]
 
-        EXOCAMS = [x for x in gt["object_masks"][object_id].keys() if "aria" not in x]
+        EXOCAMS = [x for x in gt["masks"][object_id].keys() if "aria" not in x]
         for exo_cam in EXOCAMS:
             gt_masks_ego = {}
             gt_masks_exo = {}
             pred_masks_exo = {}
 
-            if EGOCAM in gt["object_masks"][object_id].keys():
-                gt_masks_ego = gt["object_masks"][object_id][EGOCAM]["annotation"]
-            if exo_cam in gt["object_masks"][object_id].keys():
-                gt_masks_exo = gt["object_masks"][object_id][exo_cam]["annotation"]
+            if EGOCAM in gt["masks"][object_id].keys():
+                gt_masks_ego = gt["masks"][object_id][EGOCAM]
+            if exo_cam in gt["masks"][object_id].keys():
+                gt_masks_exo = gt["masks"][object_id][exo_cam]
             if (
                 object_id in pred["masks"].keys()
                 and f"{EGOCAM}__{exo_cam}" in pred["masks"][object_id].keys()
             ):
                 pred_masks_exo = pred["masks"][object_id][f"{EGOCAM}__{exo_cam}"]
 
-            for frame_idx in gt["object_masks"][object_id][exo_cam]["annotated_frames"]:
-                # if (
-                #     int(frame_idx)
-                #     not in gt["object_masks"][object_id][exo_cam]["annotated_frames"]
-                # ):
-                #     continue
+            for frame_idx in gt_masks_ego.keys():
 
-                if not str(frame_idx) in gt_masks_exo:
+                if int(frame_idx) not in gt["annotated_frames"][object_id][exo_cam]:
+                    continue
+
+                if not frame_idx in gt_masks_exo:
                     gt_mask = None
                     gt_obj_exists = 0
                 else:
-                    gt_mask = mask_utils.decode(
-                        {
-                            "size": [
-                                gt_masks_exo[str(frame_idx)]["height"],
-                                gt_masks_exo[str(frame_idx)]["width"],
-                            ],
-                            "counts": gt_masks_exo[str(frame_idx)]["encodedMask"],
-                        }
-                    )
+                    gt_mask = mask_utils.decode(gt_masks_exo[frame_idx])
                     # reshaping without padding for evaluation
                     # # TODO: remove from here: move to inference script
                     # gt_mask = utils.reshape_img_nopad(gt_mask)
@@ -76,7 +66,9 @@ def evaluate_take(gt, pred):
                     gt_obj_exists = 1
 
                 try:
-                    pred_mask = mask_utils.decode(pred_masks_exo[str(frame_idx)])
+                    pred_mask = mask_utils.decode(
+                        pred_masks_exo[frame_idx]["pred_mask"]
+                    )
                     # remove padding from the predictions
                     # # TODO: remove from here: move to inference script
                     # if not gt_mask is None:
@@ -84,17 +76,13 @@ def evaluate_take(gt, pred):
                 except:
                     breakpoint()
 
-                # pred_obj_exists = int(
-                #     pred_masks_exo[frame_idx].get("confidence", 1) > CONF_THRESH
-                # )
-                pred_obj_exists = np.sum(pred_mask) > 0
+                pred_obj_exists = int(
+                    pred_masks_exo[frame_idx]["confidence"] > CONF_THRESH
+                )
 
                 if gt_obj_exists:
                     # iou and shape accuracy
                     try:
-                        gt_mask = cv2.resize(
-                            gt_mask, (pred_mask.shape[0], pred_mask.shape[1])
-                        )
                         iou, shape_acc = utils.eval_mask(gt_mask, pred_mask)
                     except:
                         breakpoint()
@@ -139,38 +127,35 @@ def evaluate_take(gt, pred):
 
 def validate_predictions(gt, preds):
 
-    # assert "ego-exo" in preds
-    # preds = preds["ego-exo"]
+    assert "ego-exo" in preds
+    preds = preds["ego-exo"]
 
     assert type(preds) == type({})
     for key in ["version", "challenge", "results"]:
         assert key in preds.keys()
 
-    # assert preds["version"] == gt["version"]
-    # assert preds["challenge"] == gt["challenge"]
+    assert preds["version"] == gt["version"]
+    assert preds["challenge"] == gt["challenge"]
 
-    # assert len(preds["results"]) == len(gt["annotations"])
-    for take_id in preds["results"]:
-        # assert take_id in preds["results"]
+    assert len(preds["results"]) == len(gt["annotations"])
+    for take_id in gt["annotations"]:
+        assert take_id in preds["results"]
 
-        for key in ["masks"]:
+        for key in ["masks", "subsample_idx"]:
             assert key in preds["results"][take_id]
 
         # check objs
-        # import pdb
-
-        # pdb.set_trace()
-        # assert len(preds["results"][take_id]["masks"]) == len(
-        #     gt["annotations"][take_id]["object_masks"]
-        # )
-        for obj in preds["results"][take_id]["masks"]:
-            # assert (
-            #     obj in preds["results"][take_id]["masks"]
-            # ), f"{obj} not in pred {take_id}"
+        assert len(preds["results"][take_id]["masks"]) == len(
+            gt["annotations"][take_id]["masks"]
+        )
+        for obj in gt["annotations"][take_id]["masks"]:
+            assert (
+                obj in preds["results"][take_id]["masks"]
+            ), f"{obj} not in pred {take_id}"
 
             ego_cam = None
             exo_cams = []
-            for cam in gt["annotations"][take_id]["object_masks"][obj]:
+            for cam in gt["annotations"][take_id]["masks"][obj]:
                 if "aria" in cam:
                     ego_cam = cam
                 else:
@@ -191,31 +176,28 @@ def validate_predictions(gt, preds):
                     assert (
                         f"{ego_cam}__{cam}" in preds["results"][take_id]["masks"][obj]
                     )
-                    # assert f"{cam}" in preds["results"][take_id]["masks"][obj]
                 except:
                     breakpoint()
 
-                # for idx in gt["annotations"][take_id]["object_masks"][obj][ego_cam][
-                #     "annotated_frames"
-                # ]:
-                #     assert (
-                #         str(idx)
-                #         in preds["results"][take_id]["masks"][obj][f"{ego_cam}__{cam}"]
-                #     )
+                for idx in gt["annotations"][take_id]["masks"][obj][ego_cam]:
+                    assert (
+                        idx
+                        in preds["results"][take_id]["masks"][obj][f"{ego_cam}__{cam}"]
+                    )
 
-                # for key in ["pred_mask"]:
-                #     assert (
-                #         key
-                #         in preds["results"][take_id]["masks"][obj][
-                #             f"{ego_cam}__{cam}"
-                #         ][str(idx)]
-                #     )
+                    for key in ["pred_mask", "confidence"]:
+                        assert (
+                            key
+                            in preds["results"][take_id]["masks"][obj][
+                                f"{ego_cam}__{cam}"
+                            ][idx]
+                        )
 
 
 def evaluate(gt, preds):
 
     validate_predictions(gt, preds)
-    # preds = preds["ego-exo"]
+    preds = preds["ego-exo"]
 
     total_iou = []
     total_shape_acc = []
@@ -229,7 +211,7 @@ def evaluate(gt, preds):
     total_obj_exists_gt = []
     total_obj_exists_pred = []
 
-    for take_id in tqdm.tqdm(preds["results"]):
+    for take_id in tqdm.tqdm(gt["annotations"]):
 
         (
             ious,
