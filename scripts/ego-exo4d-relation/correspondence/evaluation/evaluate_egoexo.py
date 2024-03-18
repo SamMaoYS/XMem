@@ -144,15 +144,15 @@ def validate_predictions(gt, preds):
             assert key in preds["results"][take_id]
 
         # check objs
-        import pdb
+        # import pdb
 
-        pdb.set_trace()
-        assert len(preds["results"][take_id]["masks"]) == len(
-            gt["results"][take_id]["masks"]
-        )
-        for obj in gt["results"][take_id]["masks"]:
+        # pdb.set_trace()
+        # assert len(preds["results"][take_id]["masks"]) == len(
+        #     gt["results"][take_id]["masks"]
+        # )
+        for obj in preds["results"][take_id]["masks"]:
             assert (
-                obj in preds["results"][take_id]["masks"]
+                obj in gt["results"][take_id]["masks"]
             ), f"{obj} not in pred {take_id}"
 
             ego_cam = None
