@@ -50,7 +50,9 @@ def evaluate_take(gt, pred):
                 pred_masks_exo = pred["masks"][object_id][f"{EGOCAM}__{exo_cam}"]
 
             for frame_idx in gt_masks_ego.keys():
+                import pdb
 
+                pdb.set_trace()
                 if int(frame_idx) not in gt["annotated_frames"][object_id][exo_cam]:
                     continue
 
