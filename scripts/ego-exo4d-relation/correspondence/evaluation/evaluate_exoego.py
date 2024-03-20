@@ -24,9 +24,6 @@ def evaluate_take(gt, pred):
     ObjSizeGT = []
     ObjSizePred = []
     IMSize = []
-    import pdb
-
-    pdb.set_trace()
 
     for object_id in gt["masks"].keys():
         ego_cams = [x for x in gt["masks"][object_id].keys() if "aria" in x]
@@ -83,6 +80,10 @@ def evaluate_take(gt, pred):
                 pred_obj_exists = (
                     np.sum(pred_mask) > pred_mask.shape[0] * pred_mask.shape[1] * 0.0001
                 )
+
+                import pdb
+
+                pdb.set_trace()
 
                 gt_obj_exists = gt_obj_exists and (np.sum(gt_mask) > 0)
 
