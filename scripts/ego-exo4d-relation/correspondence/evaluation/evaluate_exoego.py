@@ -50,8 +50,7 @@ def evaluate_take(gt, pred):
                 pred_masks_ego = pred["masks"][object_id][f"{exo_cam}__{EGOCAM}"]
 
             for frame_idx in gt_masks_exo.keys():
-
-                if int(frame_idx) not in gt["masks"][object_id][EGOCAM]:
+                if frame_idx not in gt["masks"][object_id][EGOCAM]:
                     continue
 
                 if not frame_idx in gt_masks_ego:
@@ -80,10 +79,6 @@ def evaluate_take(gt, pred):
                 pred_obj_exists = (
                     np.sum(pred_mask) > pred_mask.shape[0] * pred_mask.shape[1] * 0.0001
                 )
-
-                import pdb
-
-                pdb.set_trace()
 
                 gt_obj_exists = gt_obj_exists and (np.sum(gt_mask) > 0)
 
