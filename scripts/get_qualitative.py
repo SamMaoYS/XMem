@@ -88,6 +88,12 @@ if __name__ == "__main__":
         split = json.load(f)
         test_ids = split[EVALMODE]
 
+    test_ids = [
+        "e8cf53f3-a9e3-45b6-a313-10765ae183e2",
+        "7abe1f04-6712-4325-b49d-4bb65bd30eec",
+        "ac259bd8-f9a1-4456-99b3-610f80351c06",
+    ]
+
     random.seed(0)
     random.shuffle(test_ids)
 
