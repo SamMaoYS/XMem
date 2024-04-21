@@ -187,7 +187,7 @@ for vid_reader in progressbar(
             frame = info["frame"][0]
             tmp = frame.split("/")
             f_name = tmp[-1]
-            rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
+            rgb_name = f"{f_name}.jpg"
             if os.path.isfile(path.join(coco_out_path, rgb_name[:-4] + ".json")):
                 continue
 
@@ -251,7 +251,7 @@ for vid_reader in progressbar(
 
                 tmp = frame.split("/")
                 f_name = tmp[-1]
-                rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
+                rgb_name = f"{f_name}.jpg"
 
                 out_img_coco = mask_utils.encode(
                     np.asfortranarray((out_mask // 255).astype(np.uint8))

@@ -62,7 +62,7 @@ class EgoExoVideoReader(Dataset):
             return
         first_anno_key = str(self.all_ref_keys[0])
 
-        rgb_name = "{:06d}.jpg".format(int(int(first_anno_key) / 30 + 1))
+        rgb_name = f"{first_anno_key}.jpg"
         rgb_name = os.path.join(
             self.data_root, self.take_id, self.ref_cam_name, rgb_name
         )
@@ -112,7 +112,7 @@ class EgoExoVideoReader(Dataset):
 
         ref_idx = np.argmax(self.all_ref_keys < int(f_name))
 
-        rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
+        rgb_name = f"{f_name}.jpg"
         im_path = os.path.join(self.data_root, self.take_id, cam_name, rgb_name)
         img = Image.open(im_path).convert("RGB")
         shape = np.array(img).shape[:2]
@@ -131,7 +131,7 @@ class EgoExoVideoReader(Dataset):
                 if np.sum(mask) > 0:
                     break
 
-        ref_rgb_name = "{:06d}.jpg".format(int(int(ref_key) / 30 + 1))
+        ref_rgb_name = f"{ref_key}.jpg"
         ref_im_path = os.path.join(
             self.data_root, self.take_id, self.ref_cam_name, ref_rgb_name
         )

@@ -15,16 +15,10 @@ class EgoExoTestDataset:
         num_frames=8,
         swap=False,
     ):
-        self.data_root = data_root
+        self.data_root = os.path.join(data_root, split)
         self.req_frame_list = {}
         self.vid_list = []
-        takes = natsorted(os.listdir(self.data_root))
-
-        splits_path = os.path.join(self.data_root, "split.json")
-        with open(splits_path, "r") as fp:
-            split_data = json.load(fp)
-        data_split = split_data[split]
-        self.takes = [take_id for take_id in data_split if take_id in takes]
+        self.takes = natsorted(os.listdir(self.data_root))
 
         for take_id in self.takes:
             annotation_path = os.path.join(self.data_root, take_id, "annotation.json")
