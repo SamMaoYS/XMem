@@ -6,13 +6,9 @@ from tqdm.auto import tqdm
 
 
 def main(args):
-    split_data = None
-    takes = os.listdir(args.split_path)
+    takes = os.listdir(os.path.join(args.input, args.split))
 
     for take_id in tqdm(takes):
-        if not os.path.isdir(os.path.join(args.input, take_id)):
-            continue
-
         result = process_take(take_id, args.input, args.pred)
 
         with open(os.path.join(args.pred, take_id, "annotations.json"), "w+") as fp:
@@ -36,7 +32,7 @@ def process_take(take_id, input, pred):
             pred_masks[object_name] = {}
             pred_masks[object_name][cams_str] = {}
             for f_name in subsample_idx:
-                f_str = "{:06d}".format(int(int(f_name) / 30 + 1))
+                f_str = f_name
 
                 pred_mask_path = os.path.join(
                     pred, take_id, cams_str, object_name, f_str + ".json"
@@ -55,11 +51,6 @@ if __name__ == "__main__":
         "--input",
         help="EgoExo take data root",
         default="../data/correspondence",
-    )
-    parser.add_argument(
-        "--split_path",
-        help="EgoExo take data root",
-        default="../data/correspondence/split.json",
     )
     parser.add_argument("--split", help="EgoExo take data root", default="val")
     parser.add_argument(
