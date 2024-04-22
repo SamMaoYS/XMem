@@ -36,7 +36,7 @@ def process_take(take_id, input, pred):
                 f_str = f_name
 
                 pred_mask_path = os.path.join(
-                    pred, take_id, cams_str, object_name, f_str + ".json"
+                    pred, take_id, cams_str, object_name, f"{f_str}.json"
                 )
                 if not os.path.isfile(pred_mask_path):
                     continue
