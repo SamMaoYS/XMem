@@ -6,10 +6,11 @@ from tqdm.auto import tqdm
 
 
 def main(args):
-    takes = os.listdir(os.path.join(args.input, args.split))
+    input_path = os.path.join(args.input, args.split)
+    takes = os.listdir(input_path)
 
     for take_id in tqdm(takes):
-        result = process_take(take_id, args.input, args.pred)
+        result = process_take(take_id, input_path, args.pred)
 
         with open(os.path.join(args.pred, take_id, "annotations.json"), "w+") as fp:
             json.dump(result, fp)
