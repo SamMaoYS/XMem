@@ -7,15 +7,8 @@ from tqdm.auto import tqdm
 
 def main(args):
     split_data = None
-    splits_path = args.split_json
-    with open(splits_path, "r") as fp:
-        split_data = json.load(fp)
+    takes = os.listdir(args.split_path)
 
-    if split_data is None:
-        print("No split found")
-        return
-
-    takes = [take_id for take_id in split_data[args.split]]
     for take_id in tqdm(takes):
         if not os.path.isdir(os.path.join(args.input, take_id)):
             continue
@@ -64,7 +57,7 @@ if __name__ == "__main__":
         default="../data/correspondence",
     )
     parser.add_argument(
-        "--split_json",
+        "--split_path",
         help="EgoExo take data root",
         default="../data/correspondence/split.json",
     )
