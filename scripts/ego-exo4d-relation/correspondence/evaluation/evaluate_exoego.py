@@ -153,7 +153,7 @@ def validate_predictions(gt, preds):
         # assert len(preds["results"][take_id]["masks"]) == len(
         #     gt["annotations"][take_id]["masks"]
         # )
-        for obj in gt["annotations"][take_id]["masks"]:
+        for obj in preds["results"][take_id]["masks"]:
             # assert (
             #     obj in gt["annotations"][take_id]["masks"]
             # ), f"{obj} not in pred {take_id}"
