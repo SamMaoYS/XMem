@@ -139,11 +139,11 @@ def validate_predictions(gt, preds):
     for key in ["version", "challenge", "results"]:
         assert key in preds.keys()
 
-    assert preds["version"] == gt["version"]
-    assert preds["challenge"] == gt["challenge"]
+    # assert preds["version"] == gt["version"]
+    # assert preds["challenge"] == gt["challenge"]
 
-    assert len(preds["results"]) == len(gt["results"])
-    for take_id in preds["results"]:
+    # assert len(preds["results"]) == len(gt["annotations"])
+    for take_id in gt["annotations"]:
         assert take_id in preds["results"]
 
         for key in ["masks"]:
@@ -154,16 +154,16 @@ def validate_predictions(gt, preds):
 
         # pdb.set_trace()
         # assert len(preds["results"][take_id]["masks"]) == len(
-        #     gt["results"][take_id]["masks"]
+        #     gt["annotations"][take_id]["masks"]
         # )
-        for obj in preds["results"][take_id]["masks"]:
+        for obj in gt["annotations"][take_id]["masks"]:
             assert (
-                obj in gt["results"][take_id]["masks"]
+                obj in preds["results"][take_id]["masks"]
             ), f"{obj} not in pred {take_id}"
 
             ego_cam = None
             exo_cams = []
-            for cam in gt["results"][take_id]["masks"][obj]:
+            for cam in gt["annotations"][take_id]["masks"][obj]:
                 if "aria" in cam:
                     ego_cam = cam
                 else:
@@ -187,7 +187,7 @@ def validate_predictions(gt, preds):
                 except:
                     breakpoint()
 
-                for idx in gt["results"][take_id]["masks"][obj][ego_cam]:
+                for idx in gt["annotations"][take_id]["masks"][obj][ego_cam]:
                     assert (
                         idx
                         in preds["results"][take_id]["masks"][obj][f"{ego_cam}__{cam}"]
@@ -219,7 +219,7 @@ def evaluate(gt, preds):
     total_obj_exists_gt = []
     total_obj_exists_pred = []
 
-    for take_id in tqdm.tqdm(preds["results"]):
+    for take_id in tqdm.tqdm(gt["annotations"]):
 
         (
             ious,
@@ -231,7 +231,7 @@ def evaluate(gt, preds):
             obj_size_gt,
             obj_size_pred,
             img_sizes,
-        ) = evaluate_take(gt["results"][take_id], preds["results"][take_id])
+        ) = evaluate_take(gt["annotations"][take_id], preds["results"][take_id])
 
         total_iou += ious
         total_shape_acc += shape_accs
