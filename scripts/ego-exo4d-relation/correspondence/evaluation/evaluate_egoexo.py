@@ -157,9 +157,12 @@ def validate_predictions(gt, preds):
         #     gt["annotations"][take_id]["masks"]
         # )
         for obj in gt["annotations"][take_id]["masks"]:
-            assert (
-                obj in preds["results"][take_id]["masks"]
-            ), f"{obj} not in pred {take_id}"
+            try:
+                assert (
+                    obj in preds["results"][take_id]["masks"]
+                ), f"{obj} not in pred {take_id}"
+            except:
+                import pdb; pdb.set_trace()
 
             ego_cam = None
             exo_cams = []
