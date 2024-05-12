@@ -3,7 +3,6 @@ trainer.py - warpper and utility functions for network training
 Compute loss, back-prop, update parameters, logging, etc.
 """
 
-
 import os
 import time
 import numpy as np
@@ -27,7 +26,7 @@ class XMemTrainer:
         self.local_rank = local_rank
 
         self.XMem = nn.parallel.DistributedDataParallel(
-            XMem(config).cuda(),
+            XMem(config, enable_segswap=self.enable_segswap).cuda(),
             device_ids=[local_rank],
             output_device=local_rank,
             broadcast_buffers=False,

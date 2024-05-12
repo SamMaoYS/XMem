@@ -17,7 +17,6 @@ class Configuration:
         parser.add_argument(
             "--segswap_model",
             type=str,
-            default="./pretrained/hard_mining_neg5.pth",
             help="path to pretrained resnet backbone model",
         )
 
