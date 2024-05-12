@@ -26,11 +26,10 @@ class XMemTrainer:
         self.local_rank = local_rank
 
         self.XMem = nn.parallel.DistributedDataParallel(
-            XMem(config).cuda(),
+            XMem(config, enable_segswap=self.enable_segswap).cuda(),
             device_ids=[local_rank],
             output_device=local_rank,
             broadcast_buffers=False,
-            enable_segswap=self.enable_segswap,
         )
 
         # Set up logger when local_rank=0
