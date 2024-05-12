@@ -127,7 +127,7 @@ class XMemTrainer:
                 frames[:, 0],
                 f16[:, 0],
                 hidden,
-                my[:, 0],
+                first_frame_gt[:, 0],
             )
             values = torch.cat([values, v16.unsqueeze(3)], 3)
             if self.enable_segswap:
