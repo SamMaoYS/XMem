@@ -39,7 +39,7 @@ class VOSDataset(Dataset):
         augmentation=False,
         swap=False,
     ):
-        self.egoexo_root = os.path.join(self.egoexo_root, "train")
+        self.egoexo_root = os.path.join(egoexo_root, "train")
         self.frame_folder = "rgb"
         self.mask_file = "annotation.json"
         self.max_jump = max_jump
