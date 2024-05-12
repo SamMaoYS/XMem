@@ -52,7 +52,7 @@ class VOSDataset(Dataset):
         self.videos = []
         self.frames = {}
 
-        self.takes = sorted(os.listdir(egoexo_root))
+        self.takes = sorted(os.listdir(self.egoexo_root))
 
         for take_id in self.takes:
             annotation_path = os.path.join(self.egoexo_root, take_id, "annotation.json")
