@@ -24,6 +24,7 @@ echo $CUDA_AVAILABLE_DEVICES
 echo "Starting script..."
 
 set -x
-srun python -m torch.distributed.launch --master_port 25754 --nproc_per_node=1 train.py --exp_id xmem_segswap --stage 3 --load_network pretrained/XMem.pth --egoexo_root ./data/correspondence/ --num_workers 4 --segswap_model pretrained/segswap_egoexo.pth --save_network_interval 1000 --save_checkpoint_interval 2000
+srun python -m torch.distributed.launch --master_port 25754 --nproc_per_node=1 train.py --exp_id xmem_egoexo_tune --stage 3 --load_network pretrained/XMem.pth --egoexo_root ./data/correspondence/ --num_workers 4 --save_network_interval 1000 --save_checkpoint_interval 2000
+# srun python -m torch.distributed.launch --master_port 25754 --nproc_per_node=1 train.py --exp_id xmem_segswap --stage 3 --load_network pretrained/XMem.pth --egoexo_root ./data/correspondence/ --num_workers 4 --segswap_model pretrained/segswap_egoexo.pth --save_network_interval 1000 --save_checkpoint_interval 2000
 # git pull
 # python eval.py --model pretrained/XMem.pth --save_all --output egoexo_pretrained_test_24 --e23_path data/correspondence --split test
