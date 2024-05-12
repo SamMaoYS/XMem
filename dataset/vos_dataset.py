@@ -56,6 +56,8 @@ class VOSDataset(Dataset):
 
         for take_id in self.takes:
             annotation_path = os.path.join(self.egoexo_root, take_id, "annotation.json")
+            if not os.path.exists(annotation_path):
+                continue
             with open(annotation_path, "r") as fp:
                 annotation = json.load(fp)
             masks = annotation["masks"]
