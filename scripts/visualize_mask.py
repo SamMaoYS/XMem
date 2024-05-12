@@ -181,7 +181,7 @@ def process_take(take_id, input, pred, output, split, visualize=False):
                     count += 1
                     if not (visualize and count % 5 == 0):
                         continue
-                    f_str = "{:06d}".format(int(int(f_name) / 30 + 1))
+                    f_str = f"{f_name}"
 
                     gt_data = masks[object_name][cam_name][f_name]
                     gt_mask = mask_utils.decode(gt_data)
@@ -209,7 +209,7 @@ def process_take(take_id, input, pred, output, split, visualize=False):
                 continue
             count = 0
             for f_name in frames:
-                f_str = "{:06d}".format(int(int(f_name) / 30 + 1))
+                f_str = f"{f_name}"
                 gt_data = masks[object_name][cam_name][f_name]
                 gt_mask = mask_utils.decode(gt_data)
                 gt_mask[gt_mask != 1] = 0

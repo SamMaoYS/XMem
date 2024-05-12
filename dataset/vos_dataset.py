@@ -201,7 +201,7 @@ class VOSDataset(Dataset):
             components = frames[f_idx].split("/")
             object_name = "/".join(components[1:-1])
             f_name = components[-1]
-            rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
+            rgb_name = f"{f_name}.jpg"
             # rgb_path = os.path.join(self.egoexo_root, take_id, cam_name, rgb_name)
             rgb_path = os.path.join(take_root, cam_name, rgb_name)
 
