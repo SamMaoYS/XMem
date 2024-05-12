@@ -26,7 +26,7 @@ class XMemTrainer:
         self.local_rank = local_rank
 
         self.XMem = nn.parallel.DistributedDataParallel(
-            XMem(config, enable_segswap=self.enable_segswap).cuda(),
+            XMem(config).cuda(),
             device_ids=[local_rank],
             output_device=local_rank,
             broadcast_buffers=False,
