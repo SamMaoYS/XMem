@@ -39,8 +39,7 @@ class VOSDataset(Dataset):
         augmentation=False,
         swap=False,
     ):
-        takes = sorted(os.listdir(egoexo_root))
-        self.egoexo_root = egoexo_root
+        self.egoexo_root = os.path.join(egoexo_root, "train")
         self.frame_folder = "rgb"
         self.mask_file = "annotation.json"
         self.max_jump = max_jump
@@ -53,14 +52,12 @@ class VOSDataset(Dataset):
         self.videos = []
         self.frames = {}
 
-        splits_path = os.path.join(self.egoexo_root, "split.json")
-        with open(splits_path, "r") as fp:
-            split_data = json.load(fp)
-        train_split = split_data["train"]
-        self.takes = [take_id for take_id in train_split if take_id in takes]
+        self.takes = sorted(os.listdir(self.egoexo_root))
 
         for take_id in self.takes:
             annotation_path = os.path.join(self.egoexo_root, take_id, "annotation.json")
+            if not os.path.exists(annotation_path):
+                continue
             with open(annotation_path, "r") as fp:
                 annotation = json.load(fp)
             masks = annotation["masks"]
@@ -204,7 +201,7 @@ class VOSDataset(Dataset):
             components = frames[f_idx].split("/")
             object_name = "/".join(components[1:-1])
             f_name = components[-1]
-            rgb_name = "{:06d}.jpg".format(int(int(f_name) / 30 + 1))
+            rgb_name = f"{f_name}.jpg"
             # rgb_path = os.path.join(self.egoexo_root, take_id, cam_name, rgb_name)
             rgb_path = os.path.join(take_root, cam_name, rgb_name)
 

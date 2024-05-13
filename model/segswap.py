@@ -55,12 +55,12 @@ def get_model(model_path, eval_mode=False):
         param = torch.load(resume_path_segswap)
         backbone.load_state_dict(param["backbone"])
         netEncoder.load_state_dict(param["encoder"], strict=False)
-        backbone.train()
+        # backbone.train()
         netEncoder.train()
-    # backbone.eval()
+    backbone.eval()
     # netEncoder.eval()
-    backbone.cuda()
     netEncoder.cuda()
+    netEncoder.net.cls_branch.requires_grad_(False)
 
     # for param in backbone.parameters():
     #     param.requires_grad = False
@@ -109,18 +109,18 @@ def forward_pass(backbone, netEncoder, tensor1, tensor2, tensor3):
     # random_mask1 = random_mask1.cuda()
     # random_mask2 = random_mask2.cuda()
 
-    # with torch.no_grad():
-    feat1 = backbone(tensor1)  ## feature
-    feat1 = F.normalize(feat1, dim=1)  ## l2 normalization
-    feat2 = backbone(tensor2)  ## features
-    feat2 = F.normalize(feat2, dim=1)  ## l2 normalization
-    # import pdb; pdb.set_trace()
-    fmask = backbone(tensor3.repeat(1, 3, 1, 1))
-    fmask = F.normalize(fmask, dim=1)
+    with torch.no_grad():
+        feat1 = backbone(tensor1)  ## feature
+        feat1 = F.normalize(feat1, dim=1)  ## l2 normalization
+        feat2 = backbone(tensor2)  ## features
+        feat2 = F.normalize(feat2, dim=1)  ## l2 normalization
+        # import pdb; pdb.set_trace()
+        fmask = backbone(tensor3.repeat(1, 3, 1, 1))
+        fmask = F.normalize(fmask, dim=1)
 
     # RX = torch.BoolTensor((1, 1, 30, 30)).fill_(False)
     # RY = torch.BoolTensor((1, 1, 30, 30)).fill_(False)
-    out1, out2, featx, featy = netEncoder(feat1, feat2, fmask)  ## predictions
+    out1, out2, featx, featy, out_cls = netEncoder(feat1, feat2, fmask)  ## predictions
 
     # visualize(tensor1, tensor2, tensor3, tensor4)
 
