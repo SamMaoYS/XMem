@@ -60,10 +60,11 @@ def get_model(model_path, eval_mode=False):
     backbone.eval()
     # netEncoder.eval()
     netEncoder.cuda()
-    netEncoder.net.cls_branch.requires_grad_(False)
 
-    # for param in backbone.parameters():
-    #     param.requires_grad = False
+    for param in backbone.parameters():
+        param.requires_grad = False
+    for param in netEncoder.net.cls_branch.parameters():
+        param.requires_grad = False
 
     return backbone, netEncoder
 
