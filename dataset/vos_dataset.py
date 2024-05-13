@@ -137,7 +137,7 @@ class VOSDataset(Dataset):
                 [
                     transforms.RandomHorizontalFlip(),
                     transforms.RandomResizedCrop(
-                        (384, 384),
+                        (480, 480),
                         scale=(0.25, 1.00),
                         interpolation=InterpolationMode.BILINEAR,
                     ),
@@ -148,7 +148,7 @@ class VOSDataset(Dataset):
                 [
                     transforms.RandomHorizontalFlip(),
                     transforms.RandomResizedCrop(
-                        (384, 384),
+                        (480, 480),
                         scale=(0.25, 1.00),
                         interpolation=InterpolationMode.NEAREST,
                     ),
@@ -159,7 +159,7 @@ class VOSDataset(Dataset):
                 [
                     transforms.RandomHorizontalFlip(),
                     transforms.RandomResizedCrop(
-                        (384, 384),
+                        (480, 480),
                         scale=(0.36, 1.00),
                         interpolation=InterpolationMode.BILINEAR,
                     ),
@@ -170,7 +170,7 @@ class VOSDataset(Dataset):
                 [
                     transforms.RandomHorizontalFlip(),
                     transforms.RandomResizedCrop(
-                        (384, 384),
+                        (480, 480),
                         scale=(0.36, 1.00),
                         interpolation=InterpolationMode.NEAREST,
                     ),
@@ -180,14 +180,14 @@ class VOSDataset(Dataset):
         # Final transform without randomness
         self.final_gt_transform = transforms.Compose(
             [
-                transforms.Resize((384, 384), interpolation=InterpolationMode.NEAREST),
+                transforms.Resize((480, 480), interpolation=InterpolationMode.NEAREST),
             ]
         )
 
         self.final_im_transform = transforms.Compose(
             [
                 transforms.ToTensor(),
-                transforms.Resize((384, 384)),
+                transforms.Resize((480, 480)),
                 im_normalization,
             ]
         )
@@ -242,8 +242,8 @@ class VOSDataset(Dataset):
         return images, masks, info_frames
 
     def one_hot_gt(self, masks, target_objects):
-        cls_gt = np.zeros((self.num_frames, 384, 384), dtype=np.int64)
-        first_frame_gt = np.zeros((1, self.max_num_obj, 384, 384), dtype=np.int64)
+        cls_gt = np.zeros((self.num_frames, 480, 480), dtype=np.int64)
+        first_frame_gt = np.zeros((1, self.max_num_obj, 480, 480), dtype=np.int64)
         for i, l in enumerate(target_objects):
             this_mask = masks == l
             cls_gt[this_mask] = i + 1
