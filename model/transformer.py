@@ -350,7 +350,7 @@ class ClsBranch(nn.Module):
         self.relu = nn.ReLU()
 
         self.mlp = nn.Sequential(
-            *[nn.Linear(28 * 28, 32), nn.ReLU(), nn.Linear(32, 1), nn.Sigmoid()]
+            *[nn.Linear(22 * 22, 32), nn.ReLU(), nn.Linear(32, 1), nn.Sigmoid()]
         )
 
     def forward(self, x):
