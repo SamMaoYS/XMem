@@ -65,7 +65,10 @@ def evaluate_take(gt, pred):
                     gt_obj_exists = 1
 
                 try:
-                    pred_mask = mask_utils.decode(pred_masks_exo[frame_idx])
+                    if pred_masks_exo.get(frame_idx, None) is None:
+                        pred_mask = np.zeros_like(gt_mask)
+                    else:
+                        pred_mask = mask_utils.decode(pred_masks_exo[frame_idx])
                     # remove padding from the predictions
                     # # TODO: remove from here: move to inference script
                     # if not gt_mask is None:
