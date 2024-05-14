@@ -46,7 +46,11 @@ class EgoExoTestDataset:
 
                     if swap:
                         ego_frames = natsorted(
-                            os.listdir(path.join(ego_cam_name, object_name))
+                            os.listdir(
+                                path.join(
+                                    self.data_root, take_id, ego_cam_name, object_name
+                                )
+                            )
                         )
                         ego_frames = [int(f.split(".")[0]) for f in ego_frames]
                         frames = np.intersect1d(ego_frames, exo_frames)
@@ -60,7 +64,11 @@ class EgoExoTestDataset:
                             )
                     else:
                         exo_frames = natsorted(
-                            os.listdir(path.join(cam_name, object_name))
+                            os.listdir(
+                                path.join(
+                                    self.data_root, take_id, cam_name, object_name
+                                )
+                            )
                         )
                         exo_frames = [int(f.split(".")[0]) for f in exo_frames]
                         frames = np.intersect1d(ego_frames, exo_frames)
