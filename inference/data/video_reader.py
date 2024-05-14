@@ -111,7 +111,7 @@ class EgoExoVideoReader(Dataset):
         info["save"] = (self.to_save is None) or (frame in self.to_save)
         info["has_ref"] = True
 
-        ref_key = int(f_name)
+        ref_key = f_name
 
         rgb_name = f"{f_name}.jpg"
         im_path = os.path.join(self.data_root, self.take_id, cam_name, rgb_name)
