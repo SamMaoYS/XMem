@@ -130,7 +130,7 @@ class EgoExoVideoReader(Dataset):
             ref_img = self.im_transform(ref_img)
             mask = Image.fromarray(mask).resize(shape[::-1], Image.Resampling.LANCZOS)
             mask = np.array(mask)
-            assert np.sum(mask) > 0, AssertionError("All masks are empty")
+            info["has_ref"] = np.sum(mask) > 0
         else:
             ref_img = img
             mask = np.zeros(shape, dtype=np.uint8)
