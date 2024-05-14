@@ -76,9 +76,9 @@ def evaluate_take(gt, pred):
                 except:
                     breakpoint()
 
-                pred_obj_exists = int(
-                    pred_masks_exo[frame_idx].get("confidence", 1) > CONF_THRESH
-                )
+                # pred_obj_exists = int(
+                #     pred_masks_exo[frame_idx].get("confidence", 1) > CONF_THRESH
+                # )
                 pred_obj_exists = (
                     np.sum(pred_mask) > pred_mask.shape[0] * pred_mask.shape[1] * 0.001
                 )
