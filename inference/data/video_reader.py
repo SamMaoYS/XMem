@@ -128,7 +128,7 @@ class EgoExoVideoReader(Dataset):
             ref_img = Image.open(ref_im_path).convert("RGB")
             ref_img = ref_img.resize(shape[::-1])
             ref_img = self.im_transform(ref_img)
-            mask = Image.fromarray(mask).resize(shape[::-1], Image.Resampling.LANCZOS)
+            mask = Image.fromarray(mask).resize(shape[::-1], Image.Resampling.NEAREST)
             mask = np.array(mask)
             info["has_ref"] = np.sum(mask) > 0
         else:
