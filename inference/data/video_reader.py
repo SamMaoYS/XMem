@@ -120,12 +120,11 @@ class EgoExoVideoReader(Dataset):
         img = self.im_transform(img)
 
         mask = self.get_mask_by_key(ref_key)
+        ref_rgb_name = f"{ref_key}.jpg"
+        ref_im_path = os.path.join(
+            self.data_root, self.take_id, self.ref_cam_name, ref_rgb_name
+        )
         if np.sum(mask) > 0:
-            ref_rgb_name = f"{ref_key}.jpg"
-            ref_im_path = os.path.join(
-                self.data_root, self.take_id, self.ref_cam_name, ref_rgb_name
-            )
-
             ref_img = Image.open(ref_im_path).convert("RGB")
             ref_img = ref_img.resize(shape[::-1])
             ref_img = self.im_transform(ref_img)
