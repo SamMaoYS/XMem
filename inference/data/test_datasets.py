@@ -34,7 +34,7 @@ class EgoExoTestDataset:
                 if cams.get(ego_cam_name) is None:
                     continue
 
-                ego_frames = list(cams[self.ego_cam_name].keys())
+                ego_frames = list(cams[ego_cam_name].keys())
                 for cam_name, cam_data in cams.items():
                     if not os.path.isdir(
                         os.path.join(self.data_root, take_id, cam_name)
