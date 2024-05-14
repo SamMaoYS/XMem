@@ -7,3 +7,6 @@ tensorboard
 numpy
 pycocotools
 natsort
+scikit-image
+scikit-learn
+opencv-python-headless
