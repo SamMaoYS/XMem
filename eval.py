@@ -200,12 +200,15 @@ for vid_reader in progressbar(
             take_id = info["take_id"][0]
             shape = info["shape"]
             need_resize = info["need_resize"][0]
+            has_ref = info["has_ref"][0]
 
             """
             For timing see https://discuss.pytorch.org/t/how-to-measure-time-in-pytorch/26964
             Seems to be very similar in testing as my previous timing method 
             with two cuda sync + time.time() in STCN though 
             """
+            if not has_ref:
+                continue
             start = torch.cuda.Event(enable_timing=True)
             end = torch.cuda.Event(enable_timing=True)
             start.record()

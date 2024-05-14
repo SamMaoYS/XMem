@@ -109,8 +109,9 @@ class EgoExoVideoReader(Dataset):
         info["frame"] = frame
         info["take_id"] = self.take_id
         info["save"] = (self.to_save is None) or (frame in self.to_save)
+        info["has_ref"] = True
 
-        ref_idx = np.argmax(self.all_ref_keys < int(f_name))
+        ref_key = int(f_name)
 
         rgb_name = f"{f_name}.jpg"
         im_path = os.path.join(self.data_root, self.take_id, cam_name, rgb_name)
@@ -118,30 +119,23 @@ class EgoExoVideoReader(Dataset):
         shape = np.array(img).shape[:2]
         img = self.im_transform(img)
 
-        for it in range(ref_idx, -1, -1):
-            ref_key = str(self.all_ref_keys[it])
-            mask = self.get_mask_by_key(ref_key)
-            if np.sum(mask) > 0:
-                break
+        mask = self.get_mask_by_key(ref_key)
+        if np.sum(mask) > 0:
+            ref_rgb_name = f"{ref_key}.jpg"
+            ref_im_path = os.path.join(
+                self.data_root, self.take_id, self.ref_cam_name, ref_rgb_name
+            )
 
-        if np.sum(mask) == 0:
-            for it in range(ref_idx + 1, len(self.all_ref_keys), 1):
-                ref_key = str(self.all_ref_keys[it])
-                mask = self.get_mask_by_key(ref_key)
-                if np.sum(mask) > 0:
-                    break
-
-        ref_rgb_name = f"{ref_key}.jpg"
-        ref_im_path = os.path.join(
-            self.data_root, self.take_id, self.ref_cam_name, ref_rgb_name
-        )
-
-        ref_img = Image.open(ref_im_path).convert("RGB")
-        ref_img = ref_img.resize(shape[::-1])
-        ref_img = self.im_transform(ref_img)
-        mask = Image.fromarray(mask).resize(shape[::-1], Image.NEAREST)
-        mask = np.array(mask)
-        assert np.sum(mask) > 0, AssertionError("All masks are empty")
+            ref_img = Image.open(ref_im_path).convert("RGB")
+            ref_img = ref_img.resize(shape[::-1])
+            ref_img = self.im_transform(ref_img)
+            mask = Image.fromarray(mask).resize(shape[::-1], Image.NEAREST)
+            mask = np.array(mask)
+            assert np.sum(mask) > 0, AssertionError("All masks are empty")
+        else:
+            ref_img = img
+            mask = np.zeros(shape, dtype=np.uint8)
+            info["has_ref"] = False
 
         data["mask"] = mask
         info["ref_frame"] = ref_im_path

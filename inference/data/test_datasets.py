@@ -34,6 +34,7 @@ class EgoExoTestDataset:
                 if cams.get(ego_cam_name) is None:
                     continue
 
+                ego_frames = list(cams[self.ego_cam_name].keys())
                 for cam_name, cam_data in cams.items():
                     if not os.path.isdir(
                         os.path.join(self.data_root, take_id, cam_name)
@@ -41,18 +42,22 @@ class EgoExoTestDataset:
                         continue
                     if cam_name == ego_cam_name:
                         continue
+                    exo_frames = list(cam_data.keys())
+                    frames = np.intersect1d(ego_frames, exo_frames)
+                    if len(frames) < num_frames:
+                        continue
 
                     if swap:
                         vid = path.join(take_id, cam_name, ego_cam_name, object_name)
-                        self.req_frame_list[vid] = [None] * len(subsample_idx)
-                        for i, f in enumerate(subsample_idx):
+                        self.req_frame_list[vid] = [None] * len(frames)
+                        for i, f in enumerate(frames):
                             self.req_frame_list[vid][i] = path.join(
                                 ego_cam_name, object_name, str(f)
                             )
                     else:
                         vid = path.join(take_id, ego_cam_name, cam_name, object_name)
-                        self.req_frame_list[vid] = [None] * len(subsample_idx)
-                        for i, f in enumerate(subsample_idx):
+                        self.req_frame_list[vid] = [None] * len(frames)
+                        for i, f in enumerate(frames):
                             self.req_frame_list[vid][i] = path.join(
                                 cam_name, object_name, str(f)
                             )
