@@ -43,11 +43,15 @@ class EgoExoTestDataset:
                     if cam_name == ego_cam_name:
                         continue
                     exo_frames = list(cam_data.keys())
-                    frames = np.intersect1d(ego_frames, exo_frames)
-                    if len(frames) < num_frames:
-                        continue
 
                     if swap:
+                        ego_frames = natsorted(
+                            os.listdir(path.join(ego_cam_name, object_name))
+                        )
+                        ego_frames = [int(f.split(".")[0]) for f in ego_frames]
+                        frames = np.intersect1d(ego_frames, exo_frames)
+                        if len(frames) < num_frames:
+                            continue
                         vid = path.join(take_id, cam_name, ego_cam_name, object_name)
                         self.req_frame_list[vid] = [None] * len(frames)
                         for i, f in enumerate(frames):
@@ -55,6 +59,13 @@ class EgoExoTestDataset:
                                 ego_cam_name, object_name, str(f)
                             )
                     else:
+                        exo_frames = natsorted(
+                            os.listdir(path.join(cam_name, object_name))
+                        )
+                        exo_frames = [int(f.split(".")[0]) for f in exo_frames]
+                        frames = np.intersect1d(ego_frames, exo_frames)
+                        if len(frames) < num_frames:
+                            continue
                         vid = path.join(take_id, ego_cam_name, cam_name, object_name)
                         self.req_frame_list[vid] = [None] * len(frames)
                         for i, f in enumerate(frames):
