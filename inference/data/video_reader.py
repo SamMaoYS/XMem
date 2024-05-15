@@ -118,7 +118,7 @@ class EgoExoVideoReader(Dataset):
         rgb_name = f"{f_name}.jpg"
         im_path = os.path.join(self.data_root, self.take_id, cam_name, rgb_name)
         img = Image.open(im_path).convert("RGB")
-        shape = np.array(img).shape[:2]
+        shape = [480, 480]
         img = self.im_transform(img)
 
         mask = self.get_mask_by_key(ref_key)
