@@ -113,6 +113,7 @@ if __name__ == "__main__":
                     if pred["masks"][obj][CAM].get(frame_idx) is None:
                         continue
                     mask = mask_utils.decode(pred["masks"][obj][CAM][frame_idx])
+                    mask = cv2.resize(mask, (frame.shape[1], frame.shape[0]))
                     # breakpoint()
                     try:
                         mask = upsample_mask(mask, frame)
