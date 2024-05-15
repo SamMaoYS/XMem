@@ -10,6 +10,8 @@ def main(args):
     takes = os.listdir(input_path)
 
     for take_id in tqdm(takes):
+        if not os.path.isdir(os.path.join(args.pred, take_id)):
+            continue
         result = process_take(take_id, input_path, args.pred)
 
         with open(os.path.join(args.pred, take_id, "annotations.json"), "w+") as fp:
