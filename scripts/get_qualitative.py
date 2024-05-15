@@ -82,11 +82,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-
-    split_file = f"{args.datapath}/split.json"
-    with open(split_file, "r") as f:
-        split = json.load(f)
-        test_ids = split[EVALMODE]
+    test_ids = os.listdir(args.datapath)
 
     random.seed(0)
     random.shuffle(test_ids)
@@ -111,9 +107,8 @@ if __name__ == "__main__":
                 target_cam = CAM.split("__")[1]
 
                 for frame_idx in gt["masks"][obj][query_cam].keys():
-                    idx = max(int(frame_idx) // 30 + 1, 0)
                     frame = cv2.imread(
-                        f"{args.datapath}/{take_id}/{target_cam}/{idx:06d}.jpg"
+                        f"{args.datapath}/{take_id}/{target_cam}/{frame_idx}.jpg"
                     )
                     if pred["masks"][obj][CAM].get(frame_idx) is None:
                         continue
@@ -158,7 +153,7 @@ if __name__ == "__main__":
 
                         # query gt
                         frame = cv2.imread(
-                            f"{args.datapath}/{take_id}/{query_cam}/{idx:06d}.jpg"
+                            f"{args.datapath}/{take_id}/{query_cam}/{frame_idx}.jpg"
                         )
                         if frame_idx in gt["masks"][obj][query_cam]:
                             gt_mask = mask_utils.decode(
