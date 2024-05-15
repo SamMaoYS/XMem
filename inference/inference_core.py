@@ -62,12 +62,7 @@ class InferenceCore:
             not end
         )
 
-        try:
-            encoded_results, mx, my = self.network.encode_key(ego_image, mask, image)
-        except:
-            import pdb
-
-            pdb.set_trace()
+        encoded_results, mx, my = self.network.encode_key(ego_image, mask, image)
 
         key = encoded_results[0]["key"]
         shrinkage = encoded_results[0]["shrinkage"] if is_mem_frame else None
