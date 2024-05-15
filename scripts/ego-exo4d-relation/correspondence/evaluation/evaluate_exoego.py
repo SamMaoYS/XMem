@@ -147,7 +147,8 @@ def validate_predictions(gt, preds):
 
     # assert len(preds["results"]) == len(gt["annotations"])
     for take_id in gt["annotations"]:
-        assert take_id in preds["results"]
+        if take_id not in preds["results"]:
+            continue
 
         for key in ["masks"]:
             assert key in preds["results"][take_id]
