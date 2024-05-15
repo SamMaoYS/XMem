@@ -14,6 +14,8 @@ def check_pred_format(input_dir, pred_dir, split):
 
     annotations = {"version": "xx", "challenge": "xx", "results": {}}
     for vid in tqdm(videos):
+        if not os.path.isdir(f"{pred_dir}/{vid}"):
+            continue
         with open(f"{pred_dir}/{vid}/annotations.json", "r") as fp:
             vid_anno = json.load(fp)
 
