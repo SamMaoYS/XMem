@@ -67,6 +67,7 @@ def evaluate_take(gt, pred):
                 try:
                     if pred_masks_ego.get(frame_idx, None) is None:
                         pred_mask = np.zeros_like(gt_mask)
+                        continue
                     else:
                         pred_mask = mask_utils.decode(pred_masks_ego[frame_idx])
                     # remove padding from the predictions
