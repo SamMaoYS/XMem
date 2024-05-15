@@ -82,7 +82,9 @@ class EgoExoVideoReader(Dataset):
                 [
                     transforms.ToTensor(),
                     im_normalization,
-                    transforms.Resize(size, interpolation=InterpolationMode.BILINEAR),
+                    transforms.Resize(
+                        (size, size), interpolation=InterpolationMode.BILINEAR
+                    ),
                 ]
             )
         self.size = size
