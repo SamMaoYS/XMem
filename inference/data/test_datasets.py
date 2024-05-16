@@ -31,8 +31,6 @@ class EgoExoTestDataset:
                 for cam_name in list(cams.keys()):
                     if "aria" in cam_name:
                         ego_cam_name = cam_name
-                if cams.get(ego_cam_name) is None:
-                    continue
 
                 ego_frames = list(cams[ego_cam_name].keys())
                 for cam_name, cam_data in cams.items():
@@ -45,13 +43,15 @@ class EgoExoTestDataset:
                     exo_frames = list(cam_data.keys())
 
                     if swap:
+                        if not os.path.isdir(
+                            os.path.join(self.data_root, take_id, ego_cam_name)
+                        ):
+                            continue
                         ego_frames = natsorted(
                             os.listdir(path.join(self.data_root, take_id, ego_cam_name))
                         )
                         ego_frames = [int(f.split(".")[0]) for f in ego_frames]
                         frames = np.intersect1d(ego_frames, exo_frames)
-                        if len(frames) < num_frames:
-                            continue
                         vid = path.join(take_id, cam_name, ego_cam_name, object_name)
                         self.req_frame_list[vid] = [None] * len(frames)
                         for i, f in enumerate(frames):
@@ -64,8 +64,6 @@ class EgoExoTestDataset:
                         )
                         exo_frames = [int(f.split(".")[0]) for f in exo_frames]
                         frames = np.intersect1d(ego_frames, exo_frames)
-                        if len(frames) < num_frames:
-                            continue
                         vid = path.join(take_id, ego_cam_name, cam_name, object_name)
                         self.req_frame_list[vid] = [None] * len(frames)
                         for i, f in enumerate(frames):
