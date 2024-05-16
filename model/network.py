@@ -73,7 +73,7 @@ class XMem(nn.Module):
 
         if self.enable_segswap:
             # get paths from ims
-            mx, my, fx, fy = segswap.forward_pass(
+            mx, my, fx, fy, out_cls = segswap.forward_pass(
                 self.backbone, self.netEncoder, frame_ego, frame_exo, mask_ego
             )
 
@@ -124,9 +124,9 @@ class XMem(nn.Module):
         if need_reshape and self.enable_segswap:
             mx = mx.view(b, t, *mx.shape[-3:])
             my = my.view(b, t, *my.shape[-3:])
-            return out, mx, my
+            return out, mx, my, out_cls
         else:
-            return out, None, None
+            return out, None, None, -1
 
     def encode_value(self, frame, image_feat_f16, h16, masks, is_deep_update=True):
         num_objects = masks.shape[1]

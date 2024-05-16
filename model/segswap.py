@@ -125,7 +125,7 @@ def forward_pass(backbone, netEncoder, tensor1, tensor2, tensor3):
 
     # visualize(tensor1, tensor2, tensor3, tensor4)
 
-    return out1.narrow(1, 2, 1), out2.narrow(1, 2, 1), featx, featy
+    return out1.narrow(1, 2, 1), out2.narrow(1, 2, 1), featx, featy, out_cls
 
 
 def visualize(tensor1, tensor2, tensor3, tensor4):

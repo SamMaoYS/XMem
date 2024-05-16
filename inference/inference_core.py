@@ -62,7 +62,9 @@ class InferenceCore:
             not end
         )
 
-        encoded_results, mx, my = self.network.encode_key(ego_image, mask, image)
+        encoded_results, mx, my, out_cls = self.network.encode_key(
+            ego_image, mask, image
+        )
 
         key = encoded_results[0]["key"]
         shrinkage = encoded_results[0]["shrinkage"] if is_mem_frame else None
@@ -132,4 +134,4 @@ class InferenceCore:
                 self.memory.set_hidden(hidden)
                 self.last_deep_update_ti = self.curr_ti
 
-        return unpad(pred_prob_with_bg, self.pad)
+        return unpad(pred_prob_with_bg, self.pad), out_cls
