@@ -71,9 +71,6 @@ class XMem(nn.Module):
         else:
             raise NotImplementedError
 
-        import pdb
-
-        pdb.set_trace()
         if self.enable_segswap:
             # get paths from ims
             mx, my, fx, fy, out_cls = segswap.forward_pass(
@@ -124,9 +121,10 @@ class XMem(nn.Module):
                 "f4": f4,
             }
 
-        if need_reshape and self.enable_segswap:
+        if need_reshape:
             mx = mx.view(b, t, *mx.shape[-3:])
             my = my.view(b, t, *my.shape[-3:])
+        if self.enable_segswap:
             return out, mx, my, out_cls
         else:
             return out, None, None, -1

@@ -27,30 +27,30 @@ class EgoExoTestDataset:
             masks = annotation["masks"]
             subsample_idx = annotation["subsample_idx"]
 
-            for object_name, cams in masks.items():
-                for cam_name in list(cams.keys()):
-                    if "aria" in cam_name:
-                        ego_cam_name = cam_name
+            cams = os.listdir(os.path.join(self.data_root, take_id))
+            cams = [c for c in cams if os.path.isdir(os.path.join(self.data_root, take_id, c))]
+            ego_cam_name = None
+            for cam_name in cams:
+                if "aria" in cam_name:
+                    ego_cam_name = cam_name
+            if ego_cam_name is None:
+                continue
 
-                ego_frames = list(cams[ego_cam_name].keys())
-                for cam_name, cam_data in cams.items():
-                    if not os.path.isdir(
-                        os.path.join(self.data_root, take_id, cam_name)
-                    ):
-                        continue
-                    if cam_name == ego_cam_name:
-                        continue
-                    exo_frames = list(cam_data.keys())
-
+            for object_name, annotated_cams in masks.items():
+                exo_cam_names = [c for c in cams if c != ego_cam_name]
+                for cam_name in exo_cam_names:
+                    ego_frames = natsorted(
+                        os.listdir(path.join(self.data_root, take_id, ego_cam_name))
+                    )
+                    ego_frames = [int(f.split(".")[0]) for f in ego_frames]
+                    exo_frames = natsorted(
+                        os.listdir(path.join(self.data_root, take_id, cam_name))
+                    )
+                    exo_frames = [int(f.split(".")[0]) for f in exo_frames]
                     if swap:
-                        if not os.path.isdir(
-                            os.path.join(self.data_root, take_id, ego_cam_name)
-                        ):
+                        if annotated_cams.get(cam_name) is None:
                             continue
-                        ego_frames = natsorted(
-                            os.listdir(path.join(self.data_root, take_id, ego_cam_name))
-                        )
-                        ego_frames = [int(f.split(".")[0]) for f in ego_frames]
+                        exo_frames = list(annotated_cams[cam_name].keys())
                         frames = np.intersect1d(ego_frames, exo_frames)
                         vid = path.join(take_id, cam_name, ego_cam_name, object_name)
                         self.req_frame_list[vid] = [None] * len(frames)
@@ -59,10 +59,9 @@ class EgoExoTestDataset:
                                 ego_cam_name, object_name, str(f)
                             )
                     else:
-                        exo_frames = natsorted(
-                            os.listdir(path.join(self.data_root, take_id, cam_name))
-                        )
-                        exo_frames = [int(f.split(".")[0]) for f in exo_frames]
+                        if annotated_cams.get(ego_cam_name) is None:
+                            continue
+                        ego_frames = list(annotated_cams[ego_cam_name].keys())
                         frames = np.intersect1d(ego_frames, exo_frames)
                         vid = path.join(take_id, ego_cam_name, cam_name, object_name)
                         self.req_frame_list[vid] = [None] * len(frames)

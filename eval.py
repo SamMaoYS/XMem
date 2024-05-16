@@ -228,9 +228,6 @@ for vid_reader in progressbar(
             prob, out_cls = processor.step(
                 rgb, ref_rgb, msk, labels, end=(ti == vid_length - 1)
             )
-            import pdb
-
-            pdb.set_trace()
 
             # Upsample to original size if needed
             if need_resize:
