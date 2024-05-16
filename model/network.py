@@ -71,6 +71,9 @@ class XMem(nn.Module):
         else:
             raise NotImplementedError
 
+        import pdb
+
+        pdb.set_trace()
         if self.enable_segswap:
             # get paths from ims
             mx, my, fx, fy, out_cls = segswap.forward_pass(
