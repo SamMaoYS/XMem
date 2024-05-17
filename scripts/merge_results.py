@@ -6,13 +6,13 @@ import numpy as np
 import argparse
 
 
-def check_pred_format(input_dir, pred_dir, split):
+def check_pred_format(input_dir, pred_dir, split, swap):
     from copy import deepcopy
 
     input_dir = os.path.join(input_dir, split)
     videos = os.listdir(input_dir)
-
-    annotations = {"ego-exo": {"version": "xx", "challenge": "xx", "results": {}}}
+    task_name = "ego-exo" if not swap else "exo-ego"
+    annotations = {task_name: {"version": "xx", "challenge": "xx", "results": {}}}
     for vid in tqdm(videos):
         if not os.path.isdir(f"{pred_dir}/{vid}"):
             continue
@@ -62,5 +62,6 @@ if __name__ == "__main__":
         help="The predicted path",
         required=True,
     )
+    parser.add_argument("--swap", action="store_true", default=False)
     args = parser.parse_args()
-    check_pred_format(args.input_dir, args.pred_dir, args.split)
+    check_pred_format(args.input_dir, args.pred_dir, args.split, args.swap)
