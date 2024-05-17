@@ -9,10 +9,14 @@ def main(args):
     input_path = os.path.join(args.input, args.split)
     takes = os.listdir(input_path)
 
+    annotation_path = "/project/3dlg-hcvc/egoexo4d/correspondence/correspondence_test_gt_v2.json"
+    with open(annotation_path, "r") as fp:
+        annotation = json.load(fp)
+
     for take_id in tqdm(takes):
         if not os.path.isdir(os.path.join(args.pred, take_id)):
             continue
-        result = process_take(take_id, input_path, args.pred)
+        result = process_take(take_id, annotation, args.pred)
 
         with open(os.path.join(args.pred, take_id, "annotations.json"), "w+") as fp:
             json.dump(result, fp)
@@ -22,30 +26,35 @@ def get_folders(path):
     return [f for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))]
 
 
-def process_take(take_id, input, pred):
-    annotation_path = os.path.join(input, take_id, "annotation.json")
-    with open(annotation_path, "r") as fp:
-        annotation = json.load(fp)
-    subsample_idx = annotation["subsample_idx"]
-
+def process_take(take_id, annotation, pred):
     pred_masks = {}
     cam_names = get_folders(os.path.join(pred, take_id))
-    for cams_str in cam_names:
-        for object_name in get_folders(os.path.join(pred, take_id, cams_str)):
-            pred_masks[object_name] = {}
+    object_names = list(annotation["annotations"][take_id]["masks"].keys())
+
+
+    count_empty = 0
+    for object_name in object_names:
+        pred_masks[object_name] = {}
+        for cams_str in cam_names:
             pred_masks[object_name][cams_str] = {}
-            for f_name in subsample_idx:
-                f_str = f_name
+            if cams_str.split('__')[0] not in annotation["annotations"][take_id]["masks"][object_name]:
+                continue
+            f_ids = list(annotation["annotations"][take_id]["masks"][object_name][cams_str.split('__')[0]].keys())
+            for f_id in f_ids:
+                f_str = f"{f_id}.json"
 
                 pred_mask_path = os.path.join(
-                    pred, take_id, cams_str, object_name, f"{f_str}.json"
+                    pred, take_id, cams_str, object_name, f_str
                 )
                 if not os.path.isfile(pred_mask_path):
-                    continue
-                with open(pred_mask_path, "r") as fp:
-                    pred_mask_data = json.load(fp)
-                pred_masks[object_name][cams_str][f_name] = pred_mask_data
-    return {"masks": pred_masks}
+                    pred_mask_data = {}
+                    count_empty += 1
+                else:
+                    with open(pred_mask_path, "r") as fp:
+                        pred_mask_data = json.load(fp)
+                pred_masks[object_name][cams_str][f_str.split('.')[0]] = pred_mask_data
+    print("Empty masks: ", count_empty)
+    return {"masks": pred_masks, 'subsample_idx': f_ids}
 
 
 if __name__ == "__main__":

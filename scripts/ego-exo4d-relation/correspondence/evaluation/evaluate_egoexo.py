@@ -76,6 +76,8 @@ def evaluate_take(gt, pred):
                 if gt_obj_exists:
                     # iou and shape accuracy
                     try:
+                        import cv2
+                        pred_mask = cv2.resize(pred_mask, (gt_mask.shape[1], gt_mask.shape[0]))
                         iou, shape_acc = utils.eval_mask(gt_mask, pred_mask)
                     except:
                         breakpoint()
@@ -123,7 +125,10 @@ def validate_predictions(gt, preds):
         assert take_id in preds["results"]
 
         for key in ["masks", "subsample_idx"]:
-            assert key in preds["results"][take_id]
+            try:
+                assert key in preds["results"][take_id]
+            except:
+                import pdb; pdb.set_trace()
 
         # check objs
         assert len(preds["results"][take_id]["masks"]) == len(gt["annotations"][take_id]["masks"])
@@ -155,10 +160,16 @@ def validate_predictions(gt, preds):
                     breakpoint()
 
                 for idx in gt["annotations"][take_id]["masks"][obj][ego_cam]:
-                    assert idx in preds["results"][take_id]["masks"][obj][f"{ego_cam}_{cam}"]
+                    try:
+                        assert idx in preds["results"][take_id]["masks"][obj][f"{ego_cam}_{cam}"]
+                    except:
+                        import pdb; pdb.set_trace()
 
                     for key in ["pred_mask", "confidence"]:
-                        assert key in preds["results"][take_id]["masks"][obj][f"{ego_cam}_{cam}"][idx]
+                        try:
+                            assert key in preds["results"][take_id]["masks"][obj][f"{ego_cam}_{cam}"][idx]
+                        except:
+                            import pdb; pdb.set_trace()
 
 def evaluate(gt, preds):
 

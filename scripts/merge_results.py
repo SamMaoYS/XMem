@@ -12,7 +12,7 @@ def check_pred_format(input_dir, pred_dir, split):
     input_dir = os.path.join(input_dir, split)
     videos = os.listdir(input_dir)
 
-    annotations = {"version": "xx", "challenge": "xx", "results": {}}
+    annotations = {"ego-exo": {"version": "xx", "challenge": "xx", "results": {}}}
     for vid in tqdm(videos):
         if not os.path.isdir(f"{pred_dir}/{vid}"):
             continue
@@ -21,20 +21,27 @@ def check_pred_format(input_dir, pred_dir, split):
 
         correct_anno = deepcopy(vid_anno)
         for obj in vid_anno["masks"]:
+            correct_anno["masks"][obj] = {}
             for cam in vid_anno["masks"][obj]:
                 for frame_idx in vid_anno["masks"][obj][cam]:
-                    mask = mask_utils.decode(vid_anno["masks"][obj][cam][frame_idx])
-
+                    mask_dict = vid_anno["masks"][obj][cam][frame_idx]
+                    if mask_dict:
+                        mask = mask_utils.decode(mask_dict)
+                    else:
+                        mask = np.zeros((480, 480)).astype(np.uint8)
                     encoded_mask = mask_utils.encode(np.asfortranarray(mask))
                     encoded_mask["counts"] = encoded_mask["counts"].decode("ascii")
-                    vid_anno["masks"][obj][cam][frame_idx] = encoded_mask
+                    vid_anno["masks"][obj][cam][frame_idx] = {
+                        "pred_mask": encoded_mask,
+                        "confidence": int(mask.sum() > (0.001 * mask.shape[0] * mask.shape[1])),
+                    }
 
-                correct_anno["masks"][obj][cam] = vid_anno["masks"][obj][cam]
+                correct_anno["masks"][obj][cam.replace("__", "_")] = vid_anno["masks"][obj][cam]
 
-        annotations["results"][vid] = correct_anno
+        annotations['ego-exo']["results"][vid] = correct_anno
 
     output_dir = os.path.dirname(pred_dir)
-    with open(f"{output_dir}/final_results_new.json", "w") as fp:
+    with open(f"{output_dir}/final_results_new.json", "w+") as fp:
         json.dump(annotations, fp)
 
 
