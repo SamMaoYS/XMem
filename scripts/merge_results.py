@@ -38,7 +38,7 @@ def check_pred_format(input_dir, pred_dir, split, swap):
 
                 correct_anno["masks"][obj][cam.replace("__", "_")] = vid_anno["masks"][obj][cam]
 
-        annotations['ego-exo']["results"][vid] = correct_anno
+        annotations[task_name]["results"][vid] = correct_anno
 
     output_dir = os.path.dirname(pred_dir)
     with open(f"{output_dir}/final_results_new.json", "w+") as fp:
