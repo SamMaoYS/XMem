@@ -76,6 +76,8 @@ def evaluate_take(gt, pred):
                 if gt_obj_exists:
                     # iou and shape accuracy
                     try:
+                        import cv2
+                        pred_mask = cv2.resize(pred_mask, (gt_mask.shape[1], gt_mask.shape[0]))
                         iou, shape_acc = utils.eval_mask(gt_mask, pred_mask)
                     except:
                         breakpoint()
